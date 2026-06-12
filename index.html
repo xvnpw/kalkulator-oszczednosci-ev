@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator EV — Oszczędności Podatkowe</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YHETMXZXMZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-YHETMXZXMZ');
+</script>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-glow"></div>
+  <h1>⚡ Kalkulator Oszczędności EV</h1>
+  <p>Ile zaoszczędzisz na podatku kupując EV do firmy? Kalkulacja PIT, KUP i leasingu dla działalności gospodarczej.</p>
+  <div class="hdr-pills">
+    <span class="hdr-pill pill-g">Gotówka / Leasing / Kredyt</span>
+    <span class="hdr-pill pill-b">Amortyzacja EV — limit 225 tys.</span>
+    <span class="hdr-pill pill-y">Koszty używania 75% KUP</span>
+    <span class="hdr-pill pill-g">TCO + inflacja CPI</span>
+  </div>
+  <div class="hdr-actions">
+    <button class="theme-toggle" id="theme_toggle" aria-label="Przełącz motyw" aria-pressed="false">
+      <span class="theme-icon-dark">☾</span>
+      <span class="theme-icon-light">☀</span>
+    </button>
+    <button class="theme-toggle" id="reset_config" onclick="resetConfig()" aria-label="Przywróć ustawienia domyślne" title="Przywróć ustawienia domyślne">
+      <span>↺</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="cols">
+
+<!-- LEFT -->
+<div class="left">
+
+  <div class="card">
+    <div class="card-hdr"><div class="ico ico-b ico--text">DG</div><h2>Dane podatkowe</h2></div>
+    <div class="card-body">
+
+      <div class="sgrp">
+        <div class="clps-hdr open" onclick="clps(this)"><span>🧑 Podatnik</span><span class="arr">▼</span></div>
+        <div class="clps-body open">
+          <div class="f">
+            <label>Źródło przychodów</label>
+            <select id="p_source" onchange="updateVisibility()">
+              <option value="etat">Umowa o pracę (Etat)</option>
+              <option value="dg" selected>Działalność gospodarcza (DG)</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Forma opodatkowania</label>
+            <select id="p_tax_form" onchange="updateVisibility()">
+              <option value="skala" selected>Skala podatkowa (12%/32%)</option>
+              <option value="liniowy">Podatek liniowy (19%)</option>
+              <option value="ryczalt">Ryczałt ewidencjonowany</option>
+            </select>
+          </div>
+
+          <div class="f hidden" id="p_ryczalt_rate_container">
+            <label>Stawka ryczałtu</label>
+            <select id="p_ryczalt_rate">
+              <option value="0.03">3%</option>
+              <option value="0.055">5.5%</option>
+              <option value="0.085" selected>8.5%</option>
+              <option value="0.12">12%</option>
+              <option value="0.15">15%</option>
+              <option value="0.17">17%</option>
+            </select>
+          </div>
+
+          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="p_inc" value="200000" min="0"></div>
+          <div class="f2">
+            <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="p_kup" value="12000" min="0"></div>
+            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń (np. składki na ubezpieczenia społeczne, ulgi).</span></span></label><input type="number" id="p_ded" value="0" min="0"></div>
+          </div>
+          <div class="lv-row"><span>Dochód po odliczeniach:</span><span class="lv" id="p_net_lv">—</span></div>
+          <div class="lv-row"><span>Należny podatek (przed odliczeniem EV) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Szacowany podatek do zapłaty przed uwzględnieniem kosztów samochodu.</span></span>:</span><span class="lv" id="p_tax_lv">—</span></div>
+          <div class="lv-row"><span>Składka zdrowotna:</span><span class="lv" id="p_health_lv">—</span></div>
+          <div id="p_vat_container">
+            <div class="dvdr"></div>
+            <div class="tog-row">
+              <span>Płatnik VAT (Podatnik)</span>
+              <label class="sw"><input type="checkbox" id="p_vat"><span class="sw-sl"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sgrp" id="joint_filing_row">
+        <div class="tog-row">
+          <span>Wspólne rozliczenie z małżonkiem</span>
+          <label class="sw"><input type="checkbox" id="joint_filing" onchange="updateVisibility()"><span class="sw-sl"></span></label>
+        </div>
+      </div>
+
+      <div class="sgrp hidden" id="spouse_section">
+        <div class="clps-hdr open" onclick="clps(this)"><span>👩 Małżonek</span><span class="arr">▼</span></div>
+        <div class="clps-body open">
+          <div class="f">
+            <label>Źródło przychodów</label>
+            <select id="s_source" onchange="updateVisibility()">
+              <option value="etat" selected>Umowa o pracę (Etat)</option>
+              <option value="dg">Działalność gospodarcza (DG)</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Forma opodatkowania</label>
+            <select id="s_tax_form" disabled>
+              <option value="skala" selected>Skala podatkowa (12%/32%)</option>
+            </select>
+          </div>
+
+          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="s_inc" value="100000" min="0"></div>
+          <div class="f2">
+            <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="s_kup" value="2400" min="0"></div>
+            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń.</span></span></label><input type="number" id="s_ded" value="0" min="0"></div>
+          </div>
+          <div class="lv-row"><span>Dochód po odliczeniach:</span><span class="lv" id="s_net_lv">—</span></div>
+          <div class="lv-row"><span>Należny podatek (przed odliczeniem EV) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Szacowany podatek do zapłaty przed uwzględnieniem kosztów samochodu.</span></span>:</span><span class="lv" id="s_tax_lv">—</span></div>
+          <div class="lv-row"><span>Składka zdrowotna:</span><span class="lv" id="s_health_lv">—</span></div>
+          <div id="s_vat_container" class="hidden">
+            <div class="dvdr"></div>
+            <div class="tog-row">
+              <span>Płatnik VAT (Małżonek)</span>
+              <label class="sw"><input type="checkbox" id="s_vat"><span class="sw-sl"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="ico ico-g">🚗</div><h2>Parametry samochodu</h2></div>
+    <div class="card-body">
+      <div class="sgrp">
+        <div class="slbl">Typ pojazdu</div>
+        <div class="rpills" id="car_type_pills">
+          <button class="rpill on" onclick="setCarType('new',this)">Nowy</button>
+          <button class="rpill" onclick="setCarType('used',this)">Używany</button>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="f"><label>Cena brutto (zł)</label><div class="iu"><input type="number" id="price_b" value="115300" min="0" inputmode="decimal" oninput="syncPrices('b')"><span class="u">zł</span></div></div>
+        <div class="f"><label>Cena netto (zł)</label><div class="iu"><input type="number" id="price_n" value="93739.84" min="0" inputmode="decimal" oninput="syncPrices('n')"><span class="u">zł</span></div></div>
+      </div>
+      <div id="used_vat_row" style="display:none">
+        <div class="f"><label>Typ ceny pojazdu używanego <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Wpływa m.in. na VAT marżę, gdzie amortyzujesz pełną kwotę brutto. <a href="#def-vat-margin" class="tt-link">Czytaj więcej →</a></span></span></label>
+          <select id="used_vat">
+            <option value="gross_only">Kwota brutto (bez VAT — os. fizyczna)</option>
+            <option value="vat23">Z VAT 23%</option>
+            <option value="vat_margin">VAT marża</option>
+          </select>
+        </div>
+      </div>
+      <div id="used_dep_rate_row" style="display:none">
+        <div class="f"><label>Stawka amortyzacji <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Wybierz 20%, jeśli przy stawce 40% koszty przekraczają Twój roczny dochód (co oznacza bezpowrotną utratę części odliczenia podatkowego).</span></span></label>
+          <select id="used_dep_rate">
+            <option value="0.40">40%/rok</option>
+            <option value="0.20">20%/rok</option>
+          </select>
+        </div>
+      </div>
+      <div class="lv-row"><span>VAT w cenie pojazdu:</span><span class="lv" id="vat_amt_lv">—</span></div>
+      <div class="lv-row"><span>Podstawa amortyzacji <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Maksymalna kwota (225 tys. zł dla EV), którą można zaliczyć w koszty przez amortyzację. <a href="#def-amort" class="tt-link">Czytaj więcej →</a></span></span>:</span><span class="lv" id="dep_base_lv">—</span></div>
+      <div class="lv-row"><span>Stawka amortyzacji:</span><span class="lv" id="dep_rate_lv">—</span></div>
+      <div class="dvdr"></div>
+      <div class="f"><label>Koszty inicjalne — prowizja, itp. (zł brutto) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Kwota brutto. Dla podatnika VAT 50% VAT jest odliczane, a nieodliczone 50% powiększa KUP: przy gotówce, kredycie i leasingu finansowym wchodzi do podstawy amortyzacji, a przy leasingu operacyjnym jest kosztem używania (75%).</span></span></label><input type="number" id="upfront" value="0" min="0"></div>
+      <div class="f2">
+        <div class="f"><label>Ubezpieczenie OC+AC / rok (zł brutto)</label><input type="number" id="insur" value="3000" min="0"></div>
+        <div class="f"><label>Eksploatacja / rok (zł brutto)</label><input type="number" id="maint" value="2000" min="0"></div>
+      </div>
+      <div class="mn">Eksploatacja: <strong>75% netto + nieodliczony VAT → KUP</strong>. Ubezpieczenie: proporcjonalnie do <strong>limitu wartości 150 tys. zł</strong>. VAT: <strong>50% odliczalne</strong> (użytek mieszany).</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="ico ico-y">💳</div><h2>Forma finansowania</h2></div>
+    <div class="card-body">
+      <div class="fin-tabs" id="fin_tabs">
+        <button class="fin-tab on" onclick="setFin('cash',this)">💵 Gotówka</button>
+        <button class="fin-tab" onclick="setFin('leasing',this)">📋 Leasing</button>
+        <button class="fin-tab" onclick="setFin('credit',this)">🏦 Kredyt</button>
+      </div>
+
+      <div class="tc on" id="tc_cash">
+        <div class="info"><strong>Amortyzacja liniowa:</strong><br>• Nowy: 20%/rok → 60 mies.&nbsp;&nbsp;• Używany: 40%/rok → 30 mies.<br>• Limit EV: <strong>225 000 zł</strong>&nbsp;&nbsp;• Odpis amortyzacyjny w <strong>100%</strong> w KUP</div>
+      </div>
+
+      <div class="tc" id="tc_leasing">
+        <div class="f"><label>Typ leasingu</label>
+          <select id="l_type">
+            <option value="oper">Operacyjny — raty w całości KUP (kapitał + odsetki)</option>
+            <option value="fin">Finansowy — amortyzacja + odsetki KUP</option>
+          </select>
+        </div>
+        <div class="f2">
+          <div class="f"><label>Wpłata własna netto (zł)</label><div class="iu"><input type="number" id="l_down" value="23394.51" min="0" inputmode="decimal" oninput="syncL('down_amt')"><span class="u">zł</span></div></div>
+          <div class="f"><label>Wpłata własna (%)</label><div class="iu"><input type="number" id="l_down_pct" value="25" step="0.1" min="0" inputmode="decimal" oninput="syncL('down_pct')"><span class="u">%</span></div></div>
+        </div>
+        <div class="f2">
+          <div class="f"><label>Wartość wykupu netto (zł)</label><div class="iu"><input type="number" id="l_buy" value="37431.22" min="0" inputmode="decimal" oninput="syncL('buy_amt')"><span class="u">zł</span></div></div>
+          <div class="f"><label>Wykup (%)</label><div class="iu"><input type="number" id="l_buy_pct" value="40" step="0.1" min="0" inputmode="decimal" oninput="syncL('buy_pct')"><span class="u">%</span></div></div>
+        </div>
+        <div class="f2">
+          <div class="f"><label>Okres (miesiące)</label><input type="number" id="l_months" value="48" min="12" max="120"></div>
+          <div class="f"><label>Rata miesięczna netto (zł)</label><input type="number" id="l_inst" value="1198.60" min="0" inputmode="decimal"></div>
+        </div>
+        <div class="lv-row"><span>Całkowity koszt leasingu brutto:</span><span class="lv" id="l_total_lv">—</span></div>
+        <div class="lv-row"><span>Łączny KUP przez okres:</span><span class="lv" id="l_kup_lv">—</span></div>
+      </div>
+
+      <div class="tc" id="tc_credit">
+        <div class="f"><label>Rodzaj kredytu <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt"><strong>50/50:</strong> płacisz 50% przy odbiorze, resztę w jednej racie po roku. <br><strong>3x33:</strong> wpłacasz 33.4%, a resztę w 2 ratach co rok. Wpływa to na odsetki i rozkład kosztów w czasie.</span></span></label>
+          <select id="c_type">
+            <option value="standard">Kredyt standardowy (raty miesięczne)</option>
+            <option value="5050">50/50 (50% wpłaty, reszta po roku)</option>
+            <option value="3x33">3x33 (33.4% wpłaty, 2 raty roczne)</option>
+          </select>
+        </div>
+        <div id="c_standard_fields">
+          <div class="f2">
+            <div class="f"><label>Wpłata własna (zł brutto)</label><input type="number" id="c_down" value="28775.25" min="0" inputmode="decimal"></div>
+            <div class="f"><label>Rata miesięczna (zł brutto)</label><input type="number" id="c_inst" value="1867.62" min="0" inputmode="decimal"></div>
+          </div>
+          <div class="f2">
+            <div class="f"><label>Okres (miesiące)</label><input type="number" id="c_months" value="60" min="6" max="120"></div>
+            <div class="f"><label>Oprocentowanie roczne (%)</label><div class="iu"><input type="number" id="c_rate" value="9.19" step="0.01" min="0" inputmode="decimal"><span class="u">%</span></div></div>
+          </div>
+        </div>
+        <div id="c_fee_field" style="display:none">
+          <div class="f"><label>Prowizja / Koszty dodatkowe kredytu (zł brutto)</label><input type="number" id="c_fee" value="5000" min="0" inputmode="decimal"></div>
+        </div>
+        <div class="lv-row"><span>Kwota kredytu:</span><span class="lv" id="c_principal_lv">—</span></div>
+        <div class="lv-row"><span>Szacunkowe łączne odsetki / koszty:</span><span class="lv" id="c_int_lv">—</span></div>
+        <div class="lv-row"><span>Całkowity koszt brutto:</span><span class="lv" id="c_total_lv">—</span></div>
+        <div class="info" style="margin-top:8px">Odsetki / prowizja → KUP w <strong>100%</strong> · Wartość netto → amortyzacja (limit 225 tys.)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="ico ico-g">⚡</div><h2>Oszczędności napędu</h2></div>
+    <div class="card-body">
+      <div class="f"><label>Roczny przebieg (km)</label><input type="number" id="km" value="15000" step="500" min="0" inputmode="decimal"></div>
+      <div class="slbl" style="margin-top:8px">Obecne auto spalinowe</div>
+      <div class="f2">
+        <div class="f"><label>Spalanie (l/100km)</label><input type="number" id="fuel_l" value="5.5" step="0.1" min="0" inputmode="decimal"></div>
+        <div class="f"><label>Cena benzyny (zł/l)</label><input type="number" id="fuel_p" value="6.40" step="0.01" min="0" inputmode="decimal"></div>
+      </div>
+      <div class="slbl">Samochód elektryczny</div>
+      <div class="f2">
+        <div class="f"><label>Zużycie (kWh/100km)</label><input type="number" id="ev_kwh" value="18" step="0.5" min="0" inputmode="decimal"></div>
+        <div class="f"><label>Cena prądu (zł/kWh)</label><input type="number" id="el_p" value="0.5240" step="0.001" min="0" inputmode="decimal"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="ico ico-pu">📈</div><h2>Inflacja & inwestycja alternatywna</h2></div>
+    <div class="card-body">
+      <div class="f2">
+        <div class="f"><label>Inflacja CPI roczna (%) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Służy do dyskontowania przyszłych przepływów pieniężnych. Pozwala obliczyć realną wartość oszczędności paliwowych i korzyści podatkowych w czasie.</span></span></label><div class="iu"><input type="number" id="cpi" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
+        <div class="f"><label>Stopa zwrotu inwestycji (%)</label><div class="iu"><input type="number" id="inv_r" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="card" id="results_card">
+    <div class="res-sticky">
+      <div class="ico ico-g" style="width:28px;height:28px;font-size:13px">📊</div>
+      <div class="rs-lbl">Łączna korzyść:</div>
+      <div class="rs-val" id="sticky_total">—</div>
+      <span class="rs-period" id="sticky_period"></span>
+    </div>
+    <div class="card-body" id="res_body">
+    </div>
+  </div>
+</div>
+
+</div>  <!-- closes .right -->
+</div>  <!-- closes .cols -->
+</div>  <!-- closes .wrap -->
+
+<div class="bottom-panel">
+  <div class="bp-tabs" role="tablist">
+    <button class="bp-tab on" data-tab="slowniczek" role="tab" aria-selected="true">Słowniczek</button>
+    <button class="bp-tab" data-tab="metodologia" role="tab" aria-selected="false">Metodologia</button>
+  </div>
+  <div class="bp-pane on" id="bp-slowniczek" role="tabpanel">
+    <div class="gl-item" id="def-kup">
+      <div class="gl-term">KUP (Koszty Uzyskania Przychodu)</div>
+      <div class="gl-def">Wydatki poniesione w celu osiągnięcia przychodów. Przy "użytku mieszanym" (prywatno-służbowym) aut osobowych do KUP zaliczasz <strong>75%</strong> kosztów używania (eksploatacja, paliwo). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong> kwoty netto (+ nieodliczony VAT), proporcjonalnie do limitu 225 tys. zł. Ubezpieczenie odlicza się proporcjonalnie do limitu wartości 150 tys. zł.</div>
+    </div>
+    <div class="gl-item" id="def-amort">
+      <div class="gl-term">Amortyzacja i limit 225 000 zł</div>
+      <div class="gl-def">Mechanizm zaliczania wartości pojazdu do kosztów w czasie. Dla samochodów elektrycznych (EV) limit amortyzacji wynosi <strong>225 000 zł</strong> (dla spalinowych 150 000 zł). Nadwyżka ponad tę kwotę nie jest kosztem podatkowym.</div>
+    </div>
+    <div class="gl-item" id="def-tco">
+      <div class="gl-term">TCO (Całkowity Koszt Posiadania)</div>
+      <div class="gl-def">Total Cost of Ownership. Obejmuje pełne obciążenie finansowe: koszt zakupu/rat, odsetki, ubezpieczenie, koszty eksploatacji <strong>minus</strong> wygenerowane oszczędności podatkowe i różnice w cenie prądu/paliwa.</div>
+    </div>
+    <div class="gl-item" id="def-vat">
+      <div class="gl-term">Odliczenie VAT (50% vs 100%)</div>
+      <div class="gl-def">Przy użytku mieszanym odlicza się <strong>50% VAT</strong> (od zakupu, rat, eksploatacji). Nieodliczone 50% powiększa wartość netto i staje się kosztem uzyskania przychodu (KUP), co zmniejsza podatek dochodowy.</div>
+    </div>
+    <div class="gl-item" id="def-inv">
+      <div class="gl-term">Inwestycja Alternatywna</div>
+      <div class="gl-def">Symulacja kapitału: ile realnie (po uwzględnieniu inflacji CPI) zarobiłbyś, inwestując kwotę wydaną na auto w inne aktywa z ustaloną stopą zwrotu. Pozwala ocenić utracone korzyści.</div>
+    </div>
+    <div class="gl-item" id="def-vat-margin">
+      <div class="gl-term">VAT Marża</div>
+      <div class="gl-def">Procedura dla aut używanych – VAT liczony jest od marży sprzedawcy. Nabywca nie odlicza VAT. Amortyzuje się pełną kwotę na fakturze (kwota brutto równa się kwocie zapłaty) do limitu 225 tys. zł.</div>
+    </div>
+  </div>
+  <div class="bp-pane" id="bp-metodologia" role="tabpanel">
+    <div class="gl-item">
+      <div class="gl-term">Zasady amortyzacji EV</div>
+      <div class="gl-def">Samochody elektryczne amortyzowane są metodą liniową. Limit 225 000 zł. Nowe pojazdy: 20%/rok (60 mies.). Używane: 40%/rok (30 mies.) lub 20%/rok (60 mies.) — wybór stawki zależy od dochodu.</div>
+    </div>
+    <div class="gl-item">
+      <div class="gl-term">Odliczalność KUP</div>
+      <div class="gl-def">Limit <strong>75%</strong> dotyczy wyłącznie kosztów używania — eksploatacji, paliwa i opłat wstępnych o charakterze eksploatacyjnym (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong>. Ubezpieczenie: proporcjonalnie do limitu wartości 150 tys. zł. Wartość przekraczająca limit 225 tys. zł nie jest KUP.</div>
+    </div>
+    <div class="gl-item">
+      <div class="gl-term">Mechanika rozliczenia wspólnego</div>
+      <div class="gl-def">Małżonkowie rozliczający się wspólnie łączą dochody i płacą podatek od połowy sumy × 2. Korzyść pojawia się, gdy jeden z małżonków przekracza próg 32%, a drugi nie.</div>
+    </div>
+    <div class="gl-item">
+      <div class="gl-term">Dyskontowanie inflacyjne</div>
+      <div class="gl-def">Przyszłe oszczędności są dyskontowane wskaźnikiem CPI, aby pokazać realną (dzisiejszą) wartość korzyści. Oszczędność 10 000 zł za 5 lat przy inflacji 5% jest warta dziś ~7 835 zł.</div>
+    </div>
+    <div class="gl-item">
+      <div class="gl-term">Podział VAT</div>
+      <div class="gl-def">Przy użytku mieszanym odliczasz 50% VAT. Nieodliczone 50% powiększa wartość netto pojazdu i staje się podstawą amortyzacji (do limitu 225 tys. zł), co zmniejsza PIT.</div>
+    </div>
+    <div class="gl-item">
+      <div class="gl-term">Założenia i uproszczenia</div>
+      <div class="gl-def">Model jest celowo ostrożny — poniższe uproszczenia w większości zaniżają, a nie zawyżają wynik:
+        <ol style="margin:8px 0 0;padding-left:18px;line-height:1.55">
+          <li><strong>Składka zdrowotna — minimum:</strong> przyjęto minimum dla roku składkowego luty 2026–styczeń 2027 (5 190,48 zł/rok, tj. 432,54 zł/mies.). Dokładne minimum kalendarzowego 2026 jest o ok. 117,58 zł/rok niższe. Minimum stosowane w ujęciu rocznym, nie miesięcznym.</li>
+          <li><strong>Amortyzacja:</strong> pełny pierwszy rok odpisu (bez przesunięcia o miesiąc po wprowadzeniu do ewidencji — art. 22h).</li>
+          <li><strong>Zaokrąglenia:</strong> podatek liczony bez zaokrągleń do pełnego złotego; pominięto daninę solidarnościową (4% powyżej 1 mln zł dochodu).</li>
+          <li><strong>Strata podatkowa:</strong> nadwyżka kosztów ponad dochód przepada — brak rozliczenia straty w kolejnych 5 latach (art. 9 ust. 3). Wynik konserwatywny, pokazywany jako „niewykorzystany KUP".</li>
+          <li><strong>Leasing:</strong> czynsz inicjalny rozliczany proporcjonalnie w okresie umowy (nie jednorazowo); wykup ujęty w ratach zamiast jako odrębne nabycie; VAT przy leasingu finansowym modelowany w ratach, a nie z góry.</li>
+          <li><strong>Dyskontowanie:</strong> wydatki dyskontowane na początek roku (1+CPI)^rok, korzyści podatkowe na koniec roku (1+CPI)^(rok+1); jednorazowe zwroty VAT w roku 0 bez dyskonta, zwroty bieżące jak wydatki — konwencja celowo ostrożna.</li>
+          <li><strong>Ubezpieczenie:</strong> cała składka traktowana jak AC z limitem proporcji wartości 150 000 zł (art. 23 ust. 1 pkt 47); brak podziału na OC/AC — ostrożne dla części OC.</li>
+          <li><strong>75% KUP:</strong> limit 75% stosowany tylko do kosztów używania (eksploatacja, paliwo, opłaty wstępne o charakterze eksploatacyjnym). Amortyzacja, raty leasingu i odsetki kredytu są kosztem w 100% (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020).</li>
+          <li><strong>Odliczenie zdrowotnej:</strong> modelowane — liniowy odlicza zapłaconą składkę od podstawy PIT do limitu 14 100 zł (2026), ryczałt pomniejsza przychód o 50% zapłaconej składki.</li>
+          <li><strong>Etat:</strong> składka zdrowotna 9% od podanego dochodu netto (bez odtwarzania składek społecznych).</li>
+          <li><strong>Paliwo (podatnik VAT):</strong> oszczędność paliwowa liczona netto + 50% nieodliczalnego VAT, spójnie po stronie korzyści i KUP.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "kalkulator-oszczednosci-ev",
+  "version": "1.0.0",
+  "description": "EV Savings Calculator for the Polish market",
+  "type": "module",
+  "scripts": {
+    "dev": "serve .",
+    "test": "vitest",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "playwright": "^1.60.0",
+    "serve": "^14.2.6",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.6"
+  }
+}
