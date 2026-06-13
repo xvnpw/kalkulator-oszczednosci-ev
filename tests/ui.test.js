@@ -28,46 +28,29 @@ describe('UI and DOM rendering', () => {
   });
 
   describe('KUP field gating (updateVisibility)', () => {
-    function setSourceAndForm(source, form) {
-      const pSource = document.getElementById('p_source');
+    function setForm(form) {
       const pTaxForm = document.getElementById('p_tax_form');
-      pSource.value = source;
-      pSource.dispatchEvent(new window.Event('change'));
       pTaxForm.value = form;
       pTaxForm.dispatchEvent(new window.Event('change'));
     }
 
-    it('disables p_kup when pSource is etat (skala)', async () => {
+    it('disables p_kup when form is ryczalt', async () => {
       const script = await import('../script.js');
-      setSourceAndForm('etat', 'skala');
+      setForm('ryczalt');
       script.updateVisibility();
       expect(document.getElementById('p_kup').disabled).toBe(true);
     });
 
-    it('disables p_kup when pSource is etat (liniowy)', async () => {
+    it('enables p_kup when form is skala', async () => {
       const script = await import('../script.js');
-      setSourceAndForm('etat', 'liniowy');
-      script.updateVisibility();
-      expect(document.getElementById('p_kup').disabled).toBe(true);
-    });
-
-    it('disables p_kup when pSource is dg and form is ryczalt', async () => {
-      const script = await import('../script.js');
-      setSourceAndForm('dg', 'ryczalt');
-      script.updateVisibility();
-      expect(document.getElementById('p_kup').disabled).toBe(true);
-    });
-
-    it('enables p_kup when pSource is dg and form is skala', async () => {
-      const script = await import('../script.js');
-      setSourceAndForm('dg', 'skala');
+      setForm('skala');
       script.updateVisibility();
       expect(document.getElementById('p_kup').disabled).toBe(false);
     });
 
-    it('enables p_kup when pSource is dg and form is liniowy', async () => {
+    it('enables p_kup when form is liniowy', async () => {
       const script = await import('../script.js');
-      setSourceAndForm('dg', 'liniowy');
+      setForm('liniowy');
       script.updateVisibility();
       expect(document.getElementById('p_kup').disabled).toBe(false);
     });
@@ -76,30 +59,64 @@ describe('UI and DOM rendering', () => {
       const script = await import('../script.js');
       const pKup = document.getElementById('p_kup');
 
-      // Start enabled (dg + skala), set a value
-      setSourceAndForm('dg', 'skala');
+      setForm('skala');
       script.updateVisibility();
       expect(pKup.disabled).toBe(false);
       pKup.value = '12345';
       expect(pKup.value).toBe('12345');
 
-      // Move to a disabled state (etat)
-      setSourceAndForm('etat', 'skala');
+      setForm('ryczalt');
       script.updateVisibility();
       expect(pKup.disabled).toBe(true);
       expect(pKup.value).toBe('12345');
 
-      // Move to another disabled state (dg + ryczalt)
-      setSourceAndForm('dg', 'ryczalt');
-      script.updateVisibility();
-      expect(pKup.disabled).toBe(true);
-      expect(pKup.value).toBe('12345');
-
-      // Move back to an enabled state (dg + liniowy)
-      setSourceAndForm('dg', 'liniowy');
+      setForm('liniowy');
       script.updateVisibility();
       expect(pKup.disabled).toBe(false);
       expect(pKup.value).toBe('12345');
+    });
+  });
+
+  describe('Income-block clarity (DG-only taxpayer)', () => {
+    it('taxpayer has no source selector', async () => {
+      await import('../script.js');
+      expect(document.getElementById('p_source')).toBeNull();
+    });
+
+    it('taxpayer income label states bez VAT', async () => {
+      await import('../script.js');
+      const incLabel = document.getElementById('p_inc').parentElement.querySelector('label');
+      expect(incLabel.textContent).toContain('bez VAT');
+    });
+
+    it('taxpayer income hint warns off take-home and profit', async () => {
+      const script = await import('../script.js');
+      script.updateVisibility();
+      const hint = document.getElementById('p_inc_hint').innerHTML;
+      expect(hint).toContain('na rękę');
+      expect(hint).toContain('zysk po kosztach');
+    });
+
+    it('ryczalt adds the cost-note line and switches the KUP tooltip', async () => {
+      const script = await import('../script.js');
+      document.getElementById('p_tax_form').value = 'ryczalt';
+      script.updateVisibility();
+      expect(document.getElementById('p_inc_hint').innerHTML).toContain('go nie obniżają');
+      expect(document.getElementById('p_kup_tt').textContent).toContain('Ryczałt nie uwzględnia');
+    });
+
+    it('spouse income label/hint follow s_source', async () => {
+      const script = await import('../script.js');
+      const sSource = document.getElementById('s_source');
+
+      sSource.value = 'etat';
+      script.updateVisibility();
+      expect(document.getElementById('s_inc_label').textContent).toContain('brutto');
+      expect(document.getElementById('s_inc_hint').innerHTML).toContain('na rękę');
+
+      sSource.value = 'dg';
+      script.updateVisibility();
+      expect(document.getElementById('s_inc_label').textContent).toContain('bez VAT');
     });
   });
 
@@ -161,7 +178,7 @@ describe('UI and DOM rendering', () => {
     it('discards a config that makes calc() throw and reloads to defaults', async () => {
       // Valid version, but cpi=-150 ⇒ inflation -150% ⇒ engine D4 guard throws inside calc().
       localStorage.setItem('ev-config', JSON.stringify({
-        version: 1, carType: 'new', financing: 'cash',
+        version: 2, carType: 'new', financing: 'cash',
         values: { cpi: '-150' },
         checks: {},
       }));

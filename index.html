@@ -52,15 +52,8 @@
     <div class="card-body">
 
       <div class="sgrp">
-        <div class="clps-hdr open" onclick="clps(this)"><span>🧑 Podatnik</span><span class="arr">▼</span></div>
+        <div class="clps-hdr open" onclick="clps(this)"><span>🧑 Podatnik — działalność gospodarcza (DG)</span><span class="arr">▼</span></div>
         <div class="clps-body open">
-          <div class="f">
-            <label>Źródło przychodów</label>
-            <select id="p_source" onchange="updateVisibility()">
-              <option value="etat">Umowa o pracę (Etat)</option>
-              <option value="dg" selected>Działalność gospodarcza (DG)</option>
-            </select>
-          </div>
           <div class="f">
             <label>Forma opodatkowania</label>
             <select id="p_tax_form" onchange="updateVisibility()">
@@ -82,10 +75,11 @@
             </select>
           </div>
 
-          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="p_inc" value="200000" min="0"></div>
+          <div class="f"><label>Przychód firmy — bez VAT (zł)</label><input type="number" id="p_inc" value="200000" min="0">
+            <div class="fhint" id="p_inc_hint"></div></div>
           <div class="f2">
-            <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="p_kup" value="12000" min="0"></div>
-            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń (np. składki na ubezpieczenia społeczne, ulgi).</span></span></label><input type="number" id="p_ded" value="0" min="0"></div>
+            <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" id="p_kup_tt">Koszty firmowe (faktury, amortyzacja itp.) — bez VAT, jeśli go odliczasz.</span></span></label><input type="number" id="p_kup" value="12000" min="0"></div>
+            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Zapłacone składki ZUS społeczne i ulgi odliczane od dochodu.</span></span></label><input type="number" id="p_ded" value="0" min="0"></div>
           </div>
           <div class="lv-row"><span>Dochód po odliczeniach:</span><span class="lv" id="p_net_lv">—</span></div>
           <div class="lv-row"><span>Należny podatek (przed odliczeniem EV) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Szacowany podatek do zapłaty przed uwzględnieniem kosztów samochodu.</span></span>:</span><span class="lv" id="p_tax_lv">—</span></div>
@@ -96,6 +90,7 @@
               <span>Płatnik VAT (Podatnik)</span>
               <label class="sw"><input type="checkbox" id="p_vat"><span class="sw-sl"></span></label>
             </div>
+            <div class="fhint">Dotyczy tylko kosztów auta (zakup, paliwo, eksploatacja). Przychód wpisuj zawsze bez VAT.</div>
           </div>
         </div>
       </div>
@@ -124,7 +119,8 @@
             </select>
           </div>
 
-          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="s_inc" value="100000" min="0"></div>
+          <div class="f"><label id="s_inc_label">Przychód / Przychód brutto (zł)</label><input type="number" id="s_inc" value="100000" min="0">
+            <div class="fhint" id="s_inc_hint"></div></div>
           <div class="f2">
             <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="s_kup" value="2400" min="0"></div>
             <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń.</span></span></label><input type="number" id="s_ded" value="0" min="0"></div>
