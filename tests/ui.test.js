@@ -210,10 +210,12 @@ describe('UI and DOM rendering', () => {
   describe('init resilience to a corrupt ev-config (D5/D4 guards)', () => {
     it('discards a config that makes calc() throw and reloads to defaults', async () => {
       // Valid version, but cpi=-150 ⇒ inflation -150% ⇒ engine D4 guard throws inside calc().
+      // The inflation-CPI toggle defaults off (inflation: 0 regardless of `cpi`), so cpi_toggle
+      // must also be persisted as checked for the bad `cpi` value to actually reach the engine.
       localStorage.setItem('ev-config', JSON.stringify({
         version: 2, carType: 'new', financing: 'cash',
         values: { cpi: '-150' },
-        checks: {},
+        checks: { cpi_toggle: true },
       }));
       const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
 

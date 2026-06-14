@@ -23,11 +23,11 @@
 <div class="hdr">
   <div class="hdr-glow"></div>
   <h1>⚡ Kalkulator Oszczędności EV</h1>
-  <p>Ile zaoszczędzisz na podatku kupując EV do firmy? Kalkulacja PIT, kosztów i leasingu dla działalności gospodarczej.</p>
+  <p>Ile zaoszczędzisz na podatku kupując EV do firmy? Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</p>
   <div class="hdr-pills">
     <span class="hdr-pill pill-g">Gotówka / Leasing / Kredyt</span>
     <span class="hdr-pill pill-b">Amortyzacja EV — limit 225 tys.</span>
-    <span class="hdr-pill pill-y">Koszty używania 75%</span>
+    <span class="hdr-pill pill-y">Użytek mieszany</span>
     <span class="hdr-pill pill-g">TCO + inflacja CPI</span>
   </div>
   <div class="hdr-actions">
@@ -90,7 +90,6 @@
               <span>Płatnik VAT (Podatnik)</span>
               <label class="sw"><input type="checkbox" id="p_vat"><span class="sw-sl"></span></label>
             </div>
-            <div class="fhint">Dotyczy tylko kosztów auta (zakup, paliwo, eksploatacja). Przychód wpisuj zawsze bez VAT.</div>
           </div>
         </div>
       </div>
@@ -269,9 +268,15 @@
   <div class="card">
     <div class="card-hdr"><div class="ico ico-pu">📈</div><h2>Inflacja & inwestycja alternatywna</h2></div>
     <div class="card-body">
-      <div class="f2">
-        <div class="f"><label>Inflacja CPI roczna (%) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Służy do dyskontowania przyszłych przepływów pieniężnych. Pozwala obliczyć realną wartość oszczędności paliwowych i korzyści podatkowych w czasie.</span></span></label><div class="iu"><input type="number" id="cpi" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
-        <div class="f"><label>Stopa zwrotu inwestycji (%)</label><div class="iu"><input type="number" id="inv_r" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
+      <div class="tog-row">
+        <span>Uwzględnij inflację CPI <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Włącza dyskontowanie przyszłych kwot inflacją CPI (wartości realne) oraz symulację inwestycji alternatywnej. Domyślnie wyłączone — kwoty pokazywane są nominalnie.</span></span></span>
+        <label class="sw"><input type="checkbox" id="cpi_toggle"><span class="sw-sl"></span></label>
+      </div>
+      <div id="cpi_inputs">
+        <div class="f2">
+          <div class="f"><label>Inflacja CPI roczna (%) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Służy do dyskontowania przyszłych przepływów pieniężnych. Pozwala obliczyć realną wartość oszczędności paliwowych i korzyści podatkowych w czasie.</span></span></label><div class="iu"><input type="number" id="cpi" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
+          <div class="f"><label>Stopa zwrotu inwestycji (%)</label><div class="iu"><input type="number" id="inv_r" value="5.0" step="0.1" min="-99" inputmode="decimal"><span class="u">%</span></div></div>
+        </div>
       </div>
     </div>
   </div>
