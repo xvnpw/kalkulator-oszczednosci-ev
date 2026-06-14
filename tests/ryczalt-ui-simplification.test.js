@@ -248,5 +248,119 @@ describe('Ryczałt UI simplification', () => {
       // Item #1 is always-hidden — does NOT get restored on switching back to skala.
       expect(document.getElementById('p_ryczalt_rate_container').classList.contains('hidden')).toBe(true);
     });
+
+    it('WP1: ryczałt + VAT payer → oper_cost_note shows VAT-only copy', async () => {
+      const script = await import('../script.js');
+
+      const pVat = document.getElementById('p_vat');
+      pVat.checked = true;
+      pVat.dispatchEvent(new window.Event('change'));
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      const note = document.getElementById('oper_cost_note');
+      expect(note.classList.contains('hidden')).toBe(false);
+      expect(note.innerHTML).toContain('VAT:');
+      expect(note.innerHTML).not.toContain('75%');
+      expect(note.innerHTML).not.toContain('150 tys.');
+    });
+
+    it('WP1: ryczałt + non-VAT payer → oper_cost_note is hidden', async () => {
+      const script = await import('../script.js');
+
+      const pVat = document.getElementById('p_vat');
+      pVat.checked = false;
+      pVat.dispatchEvent(new window.Event('change'));
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      const note = document.getElementById('oper_cost_note');
+      expect(note.classList.contains('hidden')).toBe(true);
+    });
+
+    it('WP1: skala → oper_cost_note shows full original copy (round-trip restore)', async () => {
+      const script = await import('../script.js');
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      setForm('skala');
+      script.updateVisibility();
+
+      const note = document.getElementById('oper_cost_note');
+      expect(note.classList.contains('hidden')).toBe(false);
+      expect(note.innerHTML).toContain('75%');
+      expect(note.innerHTML).toContain('150 tys.');
+    });
+
+    it('WP2: ryczałt + used car → used_dep_rate_row hidden, used_vat_row stays visible', async () => {
+      const script = await import('../script.js');
+
+      const usedBtn = document.querySelector('#car_type_pills button:nth-child(2)');
+      window.setCarType('used', usedBtn);
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      expect(document.getElementById('used_dep_rate_row').style.display).toBe('none');
+      expect(document.getElementById('used_vat_row').style.display).toBe('block');
+    });
+
+    it('WP2: skala + used car → used_dep_rate_row and used_vat_row both visible (round-trip)', async () => {
+      const script = await import('../script.js');
+
+      const usedBtn = document.querySelector('#car_type_pills button:nth-child(2)');
+      window.setCarType('used', usedBtn);
+
+      // Round-trip through ryczałt and back to skala.
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      setForm('skala');
+      script.updateVisibility();
+
+      expect(document.getElementById('used_dep_rate_row').style.display).toBe('block');
+      expect(document.getElementById('used_vat_row').style.display).toBe('block');
+    });
+
+    it('WP2: ryczałt + new car → used_dep_rate_row hidden', async () => {
+      const script = await import('../script.js');
+
+      const newBtn = document.querySelector('#car_type_pills button:nth-child(1)');
+      window.setCarType('new', newBtn);
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      expect(document.getElementById('used_dep_rate_row').style.display).toBe('none');
+    });
+
+    it('WP3: ryczałt → l_kup_lv row and c_rate field hidden, but l_total_lv/c_total_lv rows stay visible', async () => {
+      const script = await import('../script.js');
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      expect(document.getElementById('l_kup_lv').closest('.lv-row').classList.contains('hidden')).toBe(true);
+      expect(document.getElementById('c_rate').closest('.f').classList.contains('hidden')).toBe(true);
+
+      expect(document.getElementById('l_total_lv').closest('.lv-row').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('c_total_lv').closest('.lv-row').classList.contains('hidden')).toBe(false);
+    });
+
+    it('WP3: skala (round-trip) → l_kup_lv row and c_rate field not hidden', async () => {
+      const script = await import('../script.js');
+
+      setForm('ryczalt');
+      script.updateVisibility();
+
+      setForm('skala');
+      script.updateVisibility();
+
+      expect(document.getElementById('l_kup_lv').closest('.lv-row').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('c_rate').closest('.f').classList.contains('hidden')).toBe(false);
+    });
   });
 });
