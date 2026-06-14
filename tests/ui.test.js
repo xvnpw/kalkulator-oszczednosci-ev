@@ -118,6 +118,39 @@ describe('UI and DOM rendering', () => {
       script.updateVisibility();
       expect(document.getElementById('s_inc_label').textContent).toContain('bez VAT');
     });
+
+    it('taxpayer KUP field is labelled Koszty działalności', async () => {
+      await import('../script.js');
+      const kupLabel = document.getElementById('p_kup').parentElement.querySelector('label');
+      expect(kupLabel.textContent).toContain('Koszty działalności');
+    });
+
+    it('taxpayer income hint points to the renamed Koszty działalności field', async () => {
+      const script = await import('../script.js');
+      script.updateVisibility();
+      const hint = document.getElementById('p_inc_hint').innerHTML;
+      expect(hint).toContain('polu „Koszty działalności”');
+    });
+
+    it('spouse DG income hint still points to the KUP field (label unchanged)', async () => {
+      const script = await import('../script.js');
+      const sSource = document.getElementById('s_source');
+      sSource.value = 'dg';
+      script.updateVisibility();
+      const hint = document.getElementById('s_inc_hint').innerHTML;
+      expect(hint).toContain('zysk po kosztach');
+      expect(hint).toContain('polu KUP');
+      expect(hint).not.toContain('Koszty działalności');
+    });
+
+    it('ryczałt cost-note and KUP tooltip reference koszty działalności (no KUP)', async () => {
+      const script = await import('../script.js');
+      document.getElementById('p_tax_form').value = 'ryczalt';
+      script.updateVisibility();
+      expect(document.getElementById('p_inc_hint').innerHTML).toContain('koszty działalności');
+      expect(document.getElementById('p_kup_tt').textContent).toContain('kosztów działalności');
+      expect(document.getElementById('p_kup_tt').textContent).not.toContain('KUP');
+    });
   });
 
   describe('UI Overhaul', () => {
@@ -193,5 +226,44 @@ describe('UI and DOM rendering', () => {
 
       reloadSpy.mockRestore();
     });
+  });
+});
+
+describe('KUP terminology confined to spouse field', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    localStorage.clear();
+    const path = await import('path');
+    const htmlPath = path.resolve(process.cwd(), 'index.html');
+    const htmlString = fs.readFileSync(htmlPath, 'utf-8')
+      .replace(/<link[^>]*stylesheet[^>]*>/gi, '')
+      .replace(/<link[^>]*preconnect[^>]*>/gi, '');
+    document.documentElement.innerHTML = htmlString;
+  });
+
+  it('KUP appears only inside the spouse section (skala + ryczałt)', async () => {
+    await import('../script.js');
+
+    // Default state: skala + cash → covers the KPI tooltip, "Struktura kosztów"
+    // block, and the per-year cost breakdown.
+    window.calc();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    let bodyClone = document.body.cloneNode(true);
+    bodyClone.querySelector('#spouse_section').remove();
+    expect(bodyClone.innerHTML).not.toContain('KUP');
+
+    // Switch to ryczałt → covers the ryczałt info notes, the per-year
+    // ryczałt note, and the KUP_TT_RYCZALT tooltip.
+    const pTaxForm = document.getElementById('p_tax_form');
+    pTaxForm.value = 'ryczalt';
+    pTaxForm.dispatchEvent(new window.Event('change'));
+    window.calc();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    bodyClone = document.body.cloneNode(true);
+    bodyClone.querySelector('#spouse_section').remove();
+    expect(bodyClone.innerHTML).not.toContain('KUP');
+
+    // The spouse's own KUP field is untouched.
+    expect(document.getElementById('spouse_section').innerHTML).toContain('KUP');
   });
 });

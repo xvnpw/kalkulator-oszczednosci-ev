@@ -22,14 +22,14 @@
 - **Korzyści podatkowe:**
     - Limity amortyzacji EV (225 tys. PLN).
     - Regulowana stawka amortyzacji dla używanych EV (20% lub 40%) w celu optymalizacji odliczeń.
-    - Odliczenia kosztów użytku mieszanego (75% KUP, 50% VAT). Uwzględnia czynniki VAT w obliczeniach KUP leasingu na podstawie statusu płatnika VAT.
+    - Odliczenia kosztów użytku mieszanego (75% kosztów, 50% VAT). Uwzględnia czynniki VAT w obliczeniach kosztów leasingu na podstawie statusu płatnika VAT.
     - Obsługa płatnika VAT.
-- **Śledzenie strat w działalności:** Monitoruje „zmarnowane" odliczenia podatkowe (utracony KUP), gdy dochód jest niewystarczający, aby w pełni wykorzystać tarcze podatkowe związane z EV.
+- **Śledzenie strat w działalności:** Monitoruje „zmarnowane" odliczenia podatkowe (utracone koszty), gdy dochód jest niewystarczający, aby w pełni wykorzystać tarcze podatkowe związane z EV.
 - **Analiza TCO:** Obejmuje oszczędności na paliwie vs. energii elektrycznej, ubezpieczenie oraz koszty utrzymania, skorygowane o inflację.
 - **Modele ekonomiczne i finansowe:**
     - **Dyskontowanie NPV (korekta inflacyjna):** Wykorzystuje dyskontowanie wartości bieżącej netto (NPV) do korygowania przyszłych rat finansowania (takich jak płatności leasingowe/kredytowe oraz wykupy) o stopę inflacji CPI, pozostawiając płatności z roku 0 niezdyskontowane.
     - **Progresywna inwestycja alternatywna:** Reprezentuje inwestycję progresywną (gdzie przepływy pieniężne/raty są inwestowane stopniowo w kolejnych latach posiadania, w miarę jak są „oszczędzane" w porównaniu z zakupem za gotówkę z góry) zamiast jednorazowej inwestycji ryczałtowej na początku.
-- **System edukacyjny:** Interaktywne podpowiedzi wyjaśniające złożone pojęcia podatkowe (KUP, TCO, VAT itp.) oraz dedykowana sekcja Słowniczka.
+- **System edukacyjny:** Interaktywne podpowiedzi wyjaśniające złożone pojęcia podatkowe (koszty uzyskania przychodu, TCO, VAT itp.) oraz dedykowana sekcja Słowniczka.
 - **Obliczenia krok po kroku:** Szczegółowy, rozwijany podział roczny porównujący podstawę opodatkowania i zobowiązania przed oraz po zakupie EV.
 
 ## Polska logika podatkowa
@@ -53,7 +53,7 @@ Kalkulator uwzględnia konkretne polskie przepisy podatkowe (stan na 2026 r.) i 
 - **Ryczałt ewidencjonowany (podatek zryczałtowany od przychodu):**
   - Stawka PIT oparta jest na przychodzie (dostępne stawki: 3%, 5,5%, 8,5%, 12%, 15%, 17%).
   - Składka zdrowotna obliczana jest według trzech progów opartych na przychodzie, powiązanych z przeciętnym polskim wynagrodzeniem (<= 60 tys. PLN, 60 tys. – 300 tys. PLN oraz > 300 tys. PLN).
-  - Zapewnia **0% tarczy KUP** dla wydatków na samochód (kosztów nie można odliczyć od przychodu).
+  - Zapewnia **0% tarczy kosztowej** dla wydatków na samochód (kosztów nie można odliczyć od przychodu).
   - Wybór Ryczałtu dla głównego podatnika automatycznie wyłącza i odznacza wspólne rozliczenie.
   - Tarcza VAT (50% odliczenia VAT od kosztów samochodu o użytku mieszanym) jest dostępna **tylko** wtedy, gdy podatnik jest zarejestrowany jako płatnik VAT.
 
