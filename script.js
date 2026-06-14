@@ -29,10 +29,10 @@ const cb=id=>$(id)?.checked||false;
 
 // ── CONFIG PERSISTENCE ────────────────────────────
 export const EV_CONFIG_KEY = 'ev-config';
-export const EV_CONFIG_VERSION = 1;
+export const EV_CONFIG_VERSION = 2;
 
 const CONFIG_VALUE_IDS = [
-  'p_inc','p_kup','p_ded','p_source','p_tax_form','p_ryczalt_rate',
+  'p_inc','p_kup','p_ded','p_tax_form','p_ryczalt_rate',
   's_inc','s_kup','s_ded','s_source','s_tax_form',
   'price_b','price_n','used_vat','used_dep_rate','upfront','insur','maint',
   'l_type','l_down','l_down_pct','l_buy','l_buy_pct','l_months','l_inst',
@@ -90,7 +90,7 @@ function syncPrices(src){
     $('price_b').value=b.toFixed(2);
   }
 
-  const isVAT=cb('p_vat') && $('p_source')?.value==='dg';
+  const isVAT=cb('p_vat');
   let depBase;
   if(isVAT&&(carType==='new'||usedType==='vat23')){
     depBase=Math.min(net+vatAmt*0.5,EV_DEP_LIMIT);
@@ -105,7 +105,7 @@ function syncPrices(src){
   const usedDepRate = $('used_dep_rate')?.value || '0.40';
   if($('dep_rate_lv'))$('dep_rate_lv').textContent=carType==='new'?'20%/rok (60 mies.)':(usedDepRate==='0.20'?'20%/rok (60 mies.)':'40%/rok (30 mies.)');
 
-  const isDepAllowed = $('p_source')?.value==='dg' && $('p_tax_form')?.value!=='ryczalt';
+  const isDepAllowed = $('p_tax_form')?.value!=='ryczalt';
   $('dep_base_lv')?.closest('.lv-row')?.classList.toggle('lv-row-muted', !isDepAllowed);
   $('dep_rate_lv')?.closest('.lv-row')?.classList.toggle('lv-row-muted', !isDepAllowed);
 
@@ -164,7 +164,7 @@ function calc(){
     carType, financing,
     pInc: n('p_inc'), pKup: n('p_kup'), pDed: n('p_ded'),
     pTaxForm: $('p_tax_form')?.value || 'skala',
-    pSource: $('p_source')?.value || 'dg',
+    pSource: 'dg',
     pIsVAT: cb('p_vat'),
     pValRyczaltRate: parseFloat($('p_ryczalt_rate')?.value) || 0.085,
 
@@ -259,11 +259,11 @@ export function renderResults(d){
 
   h+=`<div class="kpi-grid">
     <div class="kpi ${realPurchCost<0?'kpi-g':'kpi-b'}"><div class="lbl">Realny koszt zakupu <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie) pomniejszony o korzyści.</span></span></div><div class="val ${realPurchCost<0?'pos':''}">${zl(realPurchCost,0)}</div><div class="sub">TCO bez paliwa/prądu</div></div>
-    <div class="kpi kpi-g"><div class="lbl">Zaoszczędzony podatek <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Procent, o jaki zmniejszy się Twój całkowity podatek i/lub VAT do zapłaty dzięki kosztom firmowym (KUP) i odliczeniu VAT z auta — o ile dotyczy Twojej formy opodatkowania.</span></span></div><div class="val pos">${zl(cumRealTaxSav,0)}</div><div class="sub">obniżenie o ${pct(taxReduxPct)}</div></div>
+    <div class="kpi kpi-g"><div class="lbl">Zaoszczędzony podatek <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Procent, o jaki zmniejszy się Twój całkowity podatek i/lub VAT do zapłaty dzięki kosztom działalności i odliczeniu VAT z auta — o ile dotyczy Twojej formy opodatkowania.</span></span></div><div class="val pos">${zl(cumRealTaxSav,0)}</div><div class="sub">obniżenie o ${pct(taxReduxPct)}</div></div>
     ${incFuel?`<div class="kpi kpi-g"><div class="lbl">Oszczędność na paliwie</div><div class="val pos">${zl(cumRealFuelSav,0)}</div><div class="sub">realnie przez ${calcYears} lat</div></div>`:''}
     <div class="kpi ${effectiveCost<0?'kpi-g':'kpi-r'}"><div class="lbl">Realny koszt (TCO) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie + eksploatacja) pomniejszony o korzyści. <a href="#def-tco" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val ${effectiveCost<0?'pos':'neg'}">${zl(effectiveCost,0)}</div><div class="sub">fin − korzyści + ekspl.</div></div>
     ${incInv?`<div class="kpi kpi-pu"><div class="lbl">Inwestycja alt. (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Realny (po inflacji) zysk z alternatywnego zainwestowania kapitału przeznaczonego na auto. <a href="#def-inv" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val">${zl(invReal,0)}</div><div class="sub">zysk po inflacji CPI</div></div>`:''}
-    ${cumLostIncKUP>0?`<div class="kpi kpi-y"><div class="lbl">Utracony KUP (niski dochód) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Niewykorzystana kwota kosztów z powodu zbyt niskiego dochodu.</span></span></div><div class="val neg">${zl(cumLostIncKUP,0)}</div><div class="sub">nieodliczone koszty</div></div>`:''}
+    ${cumLostIncKUP>0?`<div class="kpi kpi-y"><div class="lbl">Utracone koszty (niski dochód) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Niewykorzystana kwota kosztów z powodu zbyt niskiego dochodu.</span></span></div><div class="val neg">${zl(cumLostIncKUP,0)}</div><div class="sub">nieodliczone koszty</div></div>`:''}
   </div>`;
 
   // FUEL
@@ -307,7 +307,7 @@ export function renderResults(d){
     </table>
   </div>`;
 
-  // 3. KUP / VAT BREAKDOWN
+  // 3. KOSZTY / VAT BREAKDOWN
   if(incCar){
     const vatRefundRows = `
       ${financing==='leasing' && lType==='oper'
@@ -317,23 +317,18 @@ export function renderResults(d){
       <tr><td>VAT odliczony eksploatacja × ${calcYears}</td><td class="num">${zl(opCostVATRefund*calcYears)}</td></tr>
     `;
 
-    if(pSource !== 'dg'){
+    if(isKupAllowed){
       h+=`<div class="bk">
-        <div class="bk-t">📋 Koszty firmowe</div>
-        <div class="info" style="font-size:11px">Jako osoba zatrudniona na umowie o pracę nie rozliczasz auta w ramach działalności gospodarczej — ten pojazd nie generuje korzyści podatkowych (brak KUP, amortyzacji i odliczenia VAT).</div>
-      </div>`;
-    } else if(isKupAllowed){
-      h+=`<div class="bk">
-        <div class="bk-t">📋 Struktura KUP</div>
+        <div class="bk-t">📋 Struktura kosztów</div>
         <table class="dt">
           <tr><td>Finansowanie</td><td class="num"><span class="bdg bdg-g">${finNames[financing]}</span></td></tr>
           <tr><td>Pojazd</td><td class="num"><span class="bdg bdg-b">${carType==='new'?'Nowy':'Używany'}</span>&nbsp;<span class="bdg ${isVAT?'bdg-g':'bdg-y'}">${isVAT?'Vatowiec':'Brak odliczenia VAT'}</span></td></tr>
           ${financing==='leasing' && lType==='oper' ? '' : `<tr><td>Podstawa amortyzacji</td><td class="num">${zl(depBase)}</td></tr>`}
-          <tr><td>KUP amortyzacja/raty <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Suma wygenerowanych KUP z tytułu rat lub amortyzacji.</span></span></td><td class="num">${zl(cumTotalKUP - (insKUP+maKUP)*calcYears)}</td></tr>
-          <tr><td>KUP ubezpieczenie × ${calcYears}</td><td class="num">${zl(insKUP*calcYears)}</td></tr>
-          <tr><td>KUP eksploatacja × ${calcYears}</td><td class="num">${zl(maKUP*calcYears)}</td></tr>
+          <tr><td>Koszty amortyzacja/raty <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Suma wygenerowanych kosztów z tytułu rat lub amortyzacji.</span></span></td><td class="num">${zl(cumTotalKUP - (insKUP+maKUP)*calcYears)}</td></tr>
+          <tr><td>Koszty ubezpieczenie × ${calcYears}</td><td class="num">${zl(insKUP*calcYears)}</td></tr>
+          <tr><td>Koszty eksploatacja × ${calcYears}</td><td class="num">${zl(maKUP*calcYears)}</td></tr>
           ${isVAT?vatRefundRows:''}
-          <tr class="tot"><td>ŁĄCZNY KUP</td><td class="num">${zl(cumTotalKUP)}</td></tr>
+          <tr class="tot"><td>ŁĄCZNE KOSZTY</td><td class="num">${zl(cumTotalKUP)}</td></tr>
         </table>
       </div>`;
     } else if(isVAT){
@@ -345,12 +340,12 @@ export function renderResults(d){
           ${vatRefundRows}
           <tr class="tot"><td>ŁĄCZNY ZWROT VAT</td><td class="num">${zl(cumVATRefund)}</td></tr>
         </table>
-        <div class="info" style="margin-top:8px;font-size:11px">Ryczałt ewidencjonowany nie pozwala na rozliczanie kosztów uzyskania przychodu (KUP) ani amortyzacji — jedyną korzyścią podatkową jest tu odliczenie/zwrot VAT.</div>
+        <div class="info" style="margin-top:8px;font-size:11px">Ryczałt ewidencjonowany nie pozwala na rozliczanie kosztów uzyskania przychodu ani amortyzacji — jedyną korzyścią podatkową jest tu odliczenie/zwrot VAT.</div>
       </div>`;
     } else {
       h+=`<div class="bk">
         <div class="bk-t">📋 Koszty firmowe</div>
-        <div class="info" style="font-size:11px">Ryczałt ewidencjonowany nie pozwala na rozliczanie kosztów uzyskania przychodu (KUP) ani amortyzacji, a brak rejestracji jako podatnik VAT oznacza brak możliwości odliczenia VAT — ten pojazd nie generuje tu korzyści podatkowych.</div>
+        <div class="info" style="font-size:11px">Ryczałt ewidencjonowany nie pozwala na rozliczanie kosztów uzyskania przychodu ani amortyzacji, a brak rejestracji jako podatnik VAT oznacza brak możliwości odliczenia VAT — ten pojazd nie generuje tu korzyści podatkowych.</div>
       </div>`;
     }
   }
@@ -419,18 +414,18 @@ export function renderResults(d){
           ${incCar?(isKupAllowed?`
           <div class="sbs-div">Koszty związane z EV:</div>
           ${financing==='leasing' && lType==='oper' ? `
-          <div class="sbs-row sbs-sub"><div class="sbs-lbl">${isVAT ? 'Raty leasingowe netto (+50% VAT) (KUP)' : 'Raty leasingowe brutto (KUP)'}</div><div class="sbs-val">${zl(r.depKUP + r.intKUP)}</div></div>
+          <div class="sbs-row sbs-sub"><div class="sbs-lbl">${isVAT ? 'Raty leasingowe netto (+50% VAT)' : 'Raty leasingowe brutto'}</div><div class="sbs-val">${zl(r.depKUP + r.intKUP)}</div></div>
           ` : `
-          <div class="sbs-row sbs-sub"><div class="sbs-lbl">Amortyzacja (KUP)</div><div class="sbs-val">${zl(r.depKUP)}</div></div>
-          ${r.intKUP>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odsetki (KUP)</div><div class="sbs-val">${zl(r.intKUP)}</div></div>`:''}
+          <div class="sbs-row sbs-sub"><div class="sbs-lbl">Amortyzacja</div><div class="sbs-val">${zl(r.depKUP)}</div></div>
+          ${r.intKUP>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odsetki</div><div class="sbs-val">${zl(r.intKUP)}</div></div>`:''}
           `}
-          <div class="sbs-row sbs-sub"><div class="sbs-lbl">Eksploatacja / Ubezpieczenie (KUP)</div><div class="sbs-val">${zl(r.opKUP)}</div></div>
-          ${r.upfY>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl">Koszty początkowe (KUP)</div><div class="sbs-val">${zl(r.upfY)}</div></div>`:''}
-          <div class="sbs-row sbs-tot"><div class="sbs-lbl">Łączny wygenerowany KUP</div><div class="sbs-val">${zl(r.totalKUP)}</div></div>
-          ${r.lostIncKUP>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl" style="color:var(--y)">Utracony KUP (niski dochód)</div><div class="sbs-val" style="color:var(--y)">+ ${zl(r.lostIncKUP)} do bazy</div></div>`:''}
+          <div class="sbs-row sbs-sub"><div class="sbs-lbl">Eksploatacja / Ubezpieczenie</div><div class="sbs-val">${zl(r.opKUP)}</div></div>
+          ${r.upfY>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl">Koszty początkowe</div><div class="sbs-val">${zl(r.upfY)}</div></div>`:''}
+          <div class="sbs-row sbs-tot"><div class="sbs-lbl">Łączne wygenerowane koszty</div><div class="sbs-val">${zl(r.totalKUP)}</div></div>
+          ${r.lostIncKUP>0?`<div class="sbs-row sbs-sub"><div class="sbs-lbl" style="color:var(--y)">Utracone koszty (niski dochód)</div><div class="sbs-val" style="color:var(--y)">+ ${zl(r.lostIncKUP)} do bazy</div></div>`:''}
           `:`
           <div class="sbs-div">Koszty związane z EV:</div>
-          <div class="sbs-row"><div class="sbs-lbl" style="color:var(--t3)">Wybrana forma opodatkowania (${pSource !== 'dg' ? 'umowa o pracę' : 'ryczałt ewidencjonowany'}) nie pozwala na rozliczanie kosztów samochodu w KUP ani amortyzacji.${isVAT ? ' Jedyną korzyścią jest tu odliczenie/zwrot VAT — patrz sekcja „Zwrot VAT”.' : ''}</div></div>
+          <div class="sbs-row"><div class="sbs-lbl" style="color:var(--t3)">Wybrana forma opodatkowania (ryczałt ewidencjonowany) nie pozwala na rozliczanie kosztów samochodu ani amortyzacji.${isVAT ? ' Jedyną korzyścią jest tu odliczenie/zwrot VAT — patrz sekcja „Zwrot VAT”.' : ''}</div></div>
           `):''}
           <div class="sbs-row"><div class="sbs-lbl">Podstawa opodatkowania (Po EV)</div><div class="sbs-val">${zl(r.taxBaseAfter)}</div></div>
           <div class="sbs-row"><div class="sbs-lbl">Należny podatek (Po EV)</div><div class="sbs-val" style="color:var(--g)">${zl(r.taxWith)}</div></div>
@@ -456,8 +451,8 @@ export function renderResults(d){
               ps+='<div class="sbs-row sbs-sub"><div class="sbs-lbl">'+zl(r.afterBrackets.revenue)+' × '+pct(r.afterBrackets.rate*100)+'</div><div class="sbs-val">'+zl(r.taxWith)+'</div></div>';
             }
             ps+='<div class="sbs-row sbs-tot" style="border-top:1px dashed var(--bd);padding-top:4px;margin-top:4px"><div class="sbs-lbl">Oszczędność PIT (Δ podatek)</div><div class="sbs-val" style="color:var(--g)">'+zl(r.taxSav)+'</div></div>';
-            if(r.lostIncKUP>0) ps+='<div class="sbs-row sbs-sub" style="color:var(--y)"><div class="sbs-lbl">Utracony KUP (koszty EV przekraczają dochód): max(0, '+zl(r.netCostKUP)+' − '+zl(pNet)+')</div><div class="sbs-val">'+zl(r.lostIncKUP)+'</div></div>';
-            ps+='<div class="sbs-row sbs-sub" style="font-size:10.5px;color:var(--t3)"><div class="sbs-lbl">Stawka krańcowa (szacunek Δ podatku/zł KUP)</div><div class="sbs-val">'+Math.round(r.mr*100)+'%</div></div>';
+            if(r.lostIncKUP>0) ps+='<div class="sbs-row sbs-sub" style="color:var(--y)"><div class="sbs-lbl">Utracone koszty (koszty EV przekraczają dochód): max(0, '+zl(r.netCostKUP)+' − '+zl(pNet)+')</div><div class="sbs-val">'+zl(r.lostIncKUP)+'</div></div>';
+            ps+='<div class="sbs-row sbs-sub" style="font-size:10.5px;color:var(--t3)"><div class="sbs-lbl">Stawka krańcowa (szacunek Δ podatku/zł kosztów)</div><div class="sbs-val">'+Math.round(r.mr*100)+'%</div></div>';
             ps+='</div></details>';
             return ps;
           })()}
@@ -492,13 +487,13 @@ export function renderResults(d){
               ${(financing!=='leasing'||lType!=='oper')&&r.rawDepY>0
                 ? '<div class="sbs-div" style="padding:3px 0;font-size:10.5px;color:var(--t3)">Amortyzacja:</div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odpis roczny (podstawa × stawka)</div><div class="sbs-val">' + zl(r.rawDepY) + '</div></div>'
-                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Amortyzacja w KUP (100% odpisu)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.depKUP) + '</div></div>'
+                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Amortyzacja w kosztach (100% odpisu)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.depKUP) + '</div></div>'
                 : ''}
               ${financing==='credit'&&cType==='standard'&&r.principalPaidY!=null
                 ? '<div class="sbs-div" style="padding:3px 0;font-size:10.5px;color:var(--t3)">Spłata kredytu:</div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Spłacony kapitał</div><div class="sbs-val">' + zl(r.principalPaidY) + '</div></div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odsetki</div><div class="sbs-val">' + zl(r.interestPaidY) + '</div></div>'
-                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odsetki w KUP (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.intKUP) + '</div></div>'
+                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odsetki w kosztach (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.intKUP) + '</div></div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Saldo pozostałe</div><div class="sbs-val">' + zl(r.remainingBalance) + '</div></div>'
                 : ''}
               ${financing==='leasing'&&lType==='oper'
@@ -507,8 +502,8 @@ export function renderResults(d){
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Część odsetkowa rat</div><div class="sbs-val">' + zl(r.interestNetY) + '</div></div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Współczynnik limitu 225k (prop)</div><div class="sbs-val">' + (r.propFactor!=null?r.propFactor.toFixed(4).replace('.',','):'—') + '</div></div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Czynnik VAT (vatFactor)</div><div class="sbs-val">' + (r.leasingVatFactor!=null?r.leasingVatFactor.toFixed(3).replace('.',','):'—') + '</div></div>'
-                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">KUP kapitał = kapitał × vatFactor × prop (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.depKUP) + '</div></div>'
-                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">KUP odsetki = odsetki × vatFactor (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.intKUP) + '</div></div>'
+                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Koszty kapitał = kapitał × vatFactor × prop (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.depKUP) + '</div></div>'
+                  + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Koszty odsetki = odsetki × vatFactor (100%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.intKUP) + '</div></div>'
                 : ''}
               ${financing==='credit'&&(cType==='5050'||cType==='3x33')&&r.tranchesY&&r.tranchesY.length>0
                 ? '<div class="sbs-div" style="padding:3px 0;font-size:10.5px;color:var(--t3)">Transze w tym roku:</div>'
@@ -538,40 +533,52 @@ export function renderResults(d){
   </div>`;
 
   if(financing==='credit'&&cType==='standard'&&creditUnamortized>1){
-    h+=`<div class="info" style="margin-top:8px;font-size:11px;color:var(--r)">⚠️ Rata nie spłaca kredytu w całości — po okresie pozostaje ${zl(creditUnamortized)} niespłaconego kapitału (kredyt balonowy). Ta część nie generuje odsetek zaliczanych do KUP w kolejnych latach.</div>`;
+    h+=`<div class="info" style="margin-top:8px;font-size:11px;color:var(--r)">⚠️ Rata nie spłaca kredytu w całości — po okresie pozostaje ${zl(creditUnamortized)} niespłaconego kapitału (kredyt balonowy). Ta część nie generuje odsetek zaliczanych do kosztów w kolejnych latach.</div>`;
   }
 
-  h+=`<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Koszty używania (eksploatacja, paliwo): <strong>75% KUP</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% KUP</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
+  h+=`<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Koszty używania (eksploatacja, paliwo): <strong>75% kosztów</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% kosztów</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
 
   $('res_body').innerHTML=h;
 }
 
+// Income-block clarity copy (Polish sentence case). These are persistent helper texts, not hover tooltips.
+const INC_HINT_DG_BASE =
+  'ⓘ Cała sprzedaż/obrót firmy bez VAT.'
+  + '<span class="x">✕ to nie jest kwota „na rękę” po podatkach</span>';
+const INC_HINT_DG_TAXPAYER =
+  INC_HINT_DG_BASE
+  + '<span class="x">✕ to nie jest zysk po kosztach — koszty wpisz w polu „Koszty działalności”</span>';
+const INC_HINT_DG_SPOUSE =
+  INC_HINT_DG_BASE
+  + '<span class="x">✕ to nie jest zysk po kosztach — koszty wpisz w polu KUP</span>';
+const INC_HINT_DG_RYCZALT =
+  '<span class="note">Ryczałt liczy podatek od przychodu — koszty działalności go nie obniżają.</span>';
+const INC_HINT_ETAT =
+  'ⓘ Pensja brutto z umowy (przed podatkiem i składkami).'
+  + '<span class="x">✕ to nie jest kwota „na rękę” / przelew na konto</span>';
+const KUP_TT_DG = 'Koszty firmowe (faktury, amortyzacja itp.) — bez VAT, jeśli go odliczasz.';
+const KUP_TT_RYCZALT = 'Ryczałt nie uwzględnia kosztów działalności.';
+
 export function updateVisibility() {
   const pForm = $('p_tax_form')?.value || 'skala';
-  const pSource = $('p_source')?.value || 'dg';
   const sForm = $('s_tax_form')?.value || 'skala';
 
-  if (pSource === 'etat') {
-    if ($('p_tax_form')) $('p_tax_form').disabled = true;
-    if ($('p_inc')) $('p_inc').disabled = true;
-    if ($('p_ded')) $('p_ded').disabled = true;
-    if ($('joint_filing')) {
-      $('joint_filing').checked = false;
-      $('joint_filing').disabled = true;
-    }
-  } else {
-    if ($('p_tax_form')) $('p_tax_form').disabled = false;
-    if ($('p_inc')) $('p_inc').disabled = false;
-    if ($('p_ded')) $('p_ded').disabled = false;
-  }
+  // Taxpayer is always DG now — income/form/ded fields stay enabled (no etat branch).
+  if ($('p_tax_form')) $('p_tax_form').disabled = false;
+  if ($('p_inc')) $('p_inc').disabled = false;
+  if ($('p_ded')) $('p_ded').disabled = false;
+
+  // Income-block clarity: DG hint (+ ryczałt cost note) and the matching KUP tooltip.
+  if ($('p_inc_hint')) $('p_inc_hint').innerHTML = INC_HINT_DG_TAXPAYER + (pForm === 'ryczalt' ? INC_HINT_DG_RYCZALT : '');
+  if ($('p_kup_tt')) $('p_kup_tt').textContent = pForm === 'ryczalt' ? KUP_TT_RYCZALT : KUP_TT_DG;
 
   if ($('p_kup')) {
-    $('p_kup').disabled = (pSource === 'etat') || (pSource === 'dg' && pForm === 'ryczalt');
+    $('p_kup').disabled = (pForm === 'ryczalt');
   }
 
   const jointAllowed = pForm === 'skala';
   
-  if (!jointAllowed || pSource === 'etat') {
+  if (!jointAllowed) {
     if ($('joint_filing')) {
       $('joint_filing').checked = false;
       $('joint_filing').disabled = true;
@@ -598,14 +605,10 @@ export function updateVisibility() {
     if (sRow) sRow.style.display = sForm === 'liniowy' ? '' : 'none';
   }
 
-  if (pSource === 'dg') {
-    if ($('p_vat_container')) $('p_vat_container').classList.remove('hidden');
-  } else {
-    if ($('p_vat_container')) $('p_vat_container').classList.add('hidden');
-    if ($('p_vat')) $('p_vat').checked = false;
-  }
+  // Taxpayer is always DG — VAT toggle is always available.
+  if ($('p_vat_container')) $('p_vat_container').classList.remove('hidden');
 
-  if (pSource === 'dg' && pForm === 'ryczalt') {
+  if (pForm === 'ryczalt') {
     if ($('p_ryczalt_rate_container')) $('p_ryczalt_rate_container').classList.remove('hidden');
   } else {
     if ($('p_ryczalt_rate_container')) $('p_ryczalt_rate_container').classList.add('hidden');
@@ -618,6 +621,10 @@ export function updateVisibility() {
     if ($('s_vat_container')) $('s_vat_container').classList.add('hidden');
     if ($('s_vat')) $('s_vat').checked = false;
   }
+
+  // Spouse keeps etat/dg — income label + hint follow s_source.
+  if ($('s_inc_label')) $('s_inc_label').textContent = sSource === 'dg' ? 'Przychód firmy — bez VAT (zł)' : 'Wynagrodzenie brutto — przed podatkiem (zł)';
+  if ($('s_inc_hint')) $('s_inc_hint').innerHTML = sSource === 'dg' ? INC_HINT_DG_SPOUSE : INC_HINT_ETAT;
 
   if ($('s_tax_form')) $('s_tax_form').value = 'skala';
 }

@@ -117,24 +117,10 @@ describe('E2E Calculator Tests', () => {
 
     // === F2: Income Sources ===
     describe('F2: Income Sources', () => {
-      it('test_f2_taxpayer_etat_fields', () => {
-        const pSource = document.getElementById('p_source');
-        expect(pSource).not.toBeNull();
-        pSource.value = 'etat';
-        pSource.dispatchEvent(new window.Event('change'));
-        
-        const vatContainer = document.getElementById('p_vat_container');
-        const ryczaltContainer = document.getElementById('p_ryczalt_rate_container');
-        expect(vatContainer.classList.contains('hidden')).toBe(true);
-        expect(ryczaltContainer.classList.contains('hidden')).toBe(true);
-      });
-
-      it('test_f2_taxpayer_dg_fields', () => {
-        const pSource = document.getElementById('p_source');
-        expect(pSource).not.toBeNull();
-        pSource.value = 'dg';
-        pSource.dispatchEvent(new window.Event('change'));
-        
+      it('test_f2_taxpayer_vat_visible_dg_only', () => {
+        // Taxpayer is DG-only now — no source selector; VAT toggle is always available.
+        expect(document.getElementById('p_source')).toBeNull();
+        script.updateVisibility();
         const vatContainer = document.getElementById('p_vat_container');
         expect(vatContainer.classList.contains('hidden')).toBe(false);
       });
@@ -708,18 +694,6 @@ describe('E2E Calculator Tests', () => {
         
         const jointFiling = document.getElementById('joint_filing');
         expect(jointFiling.disabled).toBe(false);
-      });
-
-      it('test_f4_b4_changing_source_preserves_form', () => {
-        const pTaxForm = document.getElementById('p_tax_form');
-        const pSource = document.getElementById('p_source');
-        expect(pTaxForm).not.toBeNull();
-        expect(pSource).not.toBeNull();
-        
-        pTaxForm.value = 'liniowy';
-        pSource.value = 'etat';
-        pSource.dispatchEvent(new window.Event('change'));
-        expect(pTaxForm.value).toBe('liniowy');
       });
 
       it('test_f4_b5_joint_toggle_hidden_on_ryczalt', () => {

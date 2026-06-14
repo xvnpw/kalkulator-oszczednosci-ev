@@ -23,11 +23,11 @@
 <div class="hdr">
   <div class="hdr-glow"></div>
   <h1>⚡ Kalkulator Oszczędności EV</h1>
-  <p>Ile zaoszczędzisz na podatku kupując EV do firmy? Kalkulacja PIT, KUP i leasingu dla działalności gospodarczej.</p>
+  <p>Ile zaoszczędzisz na podatku kupując EV do firmy? Kalkulacja PIT, kosztów i leasingu dla działalności gospodarczej.</p>
   <div class="hdr-pills">
     <span class="hdr-pill pill-g">Gotówka / Leasing / Kredyt</span>
     <span class="hdr-pill pill-b">Amortyzacja EV — limit 225 tys.</span>
-    <span class="hdr-pill pill-y">Koszty używania 75% KUP</span>
+    <span class="hdr-pill pill-y">Koszty używania 75%</span>
     <span class="hdr-pill pill-g">TCO + inflacja CPI</span>
   </div>
   <div class="hdr-actions">
@@ -52,15 +52,8 @@
     <div class="card-body">
 
       <div class="sgrp">
-        <div class="clps-hdr open" onclick="clps(this)"><span>🧑 Podatnik</span><span class="arr">▼</span></div>
+        <div class="clps-hdr open" onclick="clps(this)"><span>🧑 Podatnik — działalność gospodarcza (DG)</span><span class="arr">▼</span></div>
         <div class="clps-body open">
-          <div class="f">
-            <label>Źródło przychodów</label>
-            <select id="p_source" onchange="updateVisibility()">
-              <option value="etat">Umowa o pracę (Etat)</option>
-              <option value="dg" selected>Działalność gospodarcza (DG)</option>
-            </select>
-          </div>
           <div class="f">
             <label>Forma opodatkowania</label>
             <select id="p_tax_form" onchange="updateVisibility()">
@@ -82,10 +75,11 @@
             </select>
           </div>
 
-          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="p_inc" value="200000" min="0"></div>
+          <div class="f"><label>Przychód firmy — bez VAT (zł)</label><input type="number" id="p_inc" value="200000" min="0">
+            <div class="fhint" id="p_inc_hint"></div></div>
           <div class="f2">
-            <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="p_kup" value="12000" min="0"></div>
-            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń (np. składki na ubezpieczenia społeczne, ulgi).</span></span></label><input type="number" id="p_ded" value="0" min="0"></div>
+            <div class="f"><label>Koszty działalności (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" id="p_kup_tt">Koszty firmowe (faktury, amortyzacja itp.) — bez VAT, jeśli go odliczasz.</span></span></label><input type="number" id="p_kup" value="12000" min="0"></div>
+            <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Zapłacone składki ZUS społeczne i ulgi odliczane od dochodu.</span></span></label><input type="number" id="p_ded" value="0" min="0"></div>
           </div>
           <div class="lv-row"><span>Dochód po odliczeniach:</span><span class="lv" id="p_net_lv">—</span></div>
           <div class="lv-row"><span>Należny podatek (przed odliczeniem EV) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Szacowany podatek do zapłaty przed uwzględnieniem kosztów samochodu.</span></span>:</span><span class="lv" id="p_tax_lv">—</span></div>
@@ -96,6 +90,7 @@
               <span>Płatnik VAT (Podatnik)</span>
               <label class="sw"><input type="checkbox" id="p_vat"><span class="sw-sl"></span></label>
             </div>
+            <div class="fhint">Dotyczy tylko kosztów auta (zakup, paliwo, eksploatacja). Przychód wpisuj zawsze bez VAT.</div>
           </div>
         </div>
       </div>
@@ -124,7 +119,8 @@
             </select>
           </div>
 
-          <div class="f"><label>Przychód / Przychód brutto (zł)</label><input type="number" id="s_inc" value="100000" min="0"></div>
+          <div class="f"><label id="s_inc_label">Przychód / Przychód brutto (zł)</label><input type="number" id="s_inc" value="100000" min="0">
+            <div class="fhint" id="s_inc_hint"></div></div>
           <div class="f2">
             <div class="f"><label>KUP (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Koszty uzyskania przychodu (pracownicze lub firmowe).</span></span></label><input type="number" id="s_kup" value="2400" min="0"></div>
             <div class="f"><label>Odliczenia od dochodu (zł) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Suma odliczeń.</span></span></label><input type="number" id="s_ded" value="0" min="0"></div>
@@ -179,12 +175,12 @@
       <div class="lv-row"><span>Podstawa amortyzacji <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Maksymalna kwota (225 tys. zł dla EV), którą można zaliczyć w koszty przez amortyzację. <a href="#def-amort" class="tt-link">Czytaj więcej →</a></span></span>:</span><span class="lv" id="dep_base_lv">—</span></div>
       <div class="lv-row"><span>Stawka amortyzacji:</span><span class="lv" id="dep_rate_lv">—</span></div>
       <div class="dvdr"></div>
-      <div class="f"><label>Koszty inicjalne — prowizja, itp. (zł brutto) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Kwota brutto. Dla podatnika VAT 50% VAT jest odliczane, a nieodliczone 50% powiększa KUP: przy gotówce, kredycie i leasingu finansowym wchodzi do podstawy amortyzacji, a przy leasingu operacyjnym jest kosztem używania (75%).</span></span></label><input type="number" id="upfront" value="0" min="0"></div>
+      <div class="f"><label>Koszty inicjalne — prowizja, itp. (zł brutto) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Kwota brutto. Dla podatnika VAT 50% VAT jest odliczane, a nieodliczone 50% powiększa koszty: przy gotówce, kredycie i leasingu finansowym wchodzi do podstawy amortyzacji, a przy leasingu operacyjnym jest kosztem używania (75%).</span></span></label><input type="number" id="upfront" value="0" min="0"></div>
       <div class="f2">
         <div class="f"><label>Ubezpieczenie OC+AC / rok (zł brutto)</label><input type="number" id="insur" value="3000" min="0"></div>
         <div class="f"><label>Eksploatacja / rok (zł brutto)</label><input type="number" id="maint" value="2000" min="0"></div>
       </div>
-      <div class="mn">Eksploatacja: <strong>75% netto + nieodliczony VAT → KUP</strong>. Ubezpieczenie: proporcjonalnie do <strong>limitu wartości 150 tys. zł</strong>. VAT: <strong>50% odliczalne</strong> (użytek mieszany).</div>
+      <div class="mn">Eksploatacja: <strong>75% netto + nieodliczony VAT → koszty</strong>. Ubezpieczenie: proporcjonalnie do <strong>limitu wartości 150 tys. zł</strong>. VAT: <strong>50% odliczalne</strong> (użytek mieszany).</div>
     </div>
   </div>
 
@@ -198,14 +194,14 @@
       </div>
 
       <div class="tc on" id="tc_cash">
-        <div class="info"><strong>Amortyzacja liniowa:</strong><br>• Nowy: 20%/rok → 60 mies.&nbsp;&nbsp;• Używany: 40%/rok → 30 mies.<br>• Limit EV: <strong>225 000 zł</strong>&nbsp;&nbsp;• Odpis amortyzacyjny w <strong>100%</strong> w KUP</div>
+        <div class="info"><strong>Amortyzacja liniowa:</strong><br>• Nowy: 20%/rok → 60 mies.&nbsp;&nbsp;• Używany: 40%/rok → 30 mies.<br>• Limit EV: <strong>225 000 zł</strong>&nbsp;&nbsp;• Odpis amortyzacyjny w <strong>100%</strong> w kosztach</div>
       </div>
 
       <div class="tc" id="tc_leasing">
         <div class="f"><label>Typ leasingu</label>
           <select id="l_type">
-            <option value="oper">Operacyjny — raty w całości KUP (kapitał + odsetki)</option>
-            <option value="fin">Finansowy — amortyzacja + odsetki KUP</option>
+            <option value="oper">Operacyjny — raty w całości w kosztach (kapitał + odsetki)</option>
+            <option value="fin">Finansowy — amortyzacja + odsetki w kosztach</option>
           </select>
         </div>
         <div class="f2">
@@ -221,7 +217,7 @@
           <div class="f"><label>Rata miesięczna netto (zł)</label><input type="number" id="l_inst" value="1198.60" min="0" inputmode="decimal"></div>
         </div>
         <div class="lv-row"><span>Całkowity koszt leasingu brutto:</span><span class="lv" id="l_total_lv">—</span></div>
-        <div class="lv-row"><span>Łączny KUP przez okres:</span><span class="lv" id="l_kup_lv">—</span></div>
+        <div class="lv-row"><span>Łączne koszty przez okres:</span><span class="lv" id="l_kup_lv">—</span></div>
       </div>
 
       <div class="tc" id="tc_credit">
@@ -248,7 +244,7 @@
         <div class="lv-row"><span>Kwota kredytu:</span><span class="lv" id="c_principal_lv">—</span></div>
         <div class="lv-row"><span>Szacunkowe łączne odsetki / koszty:</span><span class="lv" id="c_int_lv">—</span></div>
         <div class="lv-row"><span>Całkowity koszt brutto:</span><span class="lv" id="c_total_lv">—</span></div>
-        <div class="info" style="margin-top:8px">Odsetki / prowizja → KUP w <strong>100%</strong> · Wartość netto → amortyzacja (limit 225 tys.)</div>
+        <div class="info" style="margin-top:8px">Odsetki / prowizja → koszty w <strong>100%</strong> · Wartość netto → amortyzacja (limit 225 tys.)</div>
       </div>
     </div>
   </div>
@@ -308,8 +304,8 @@
   </div>
   <div class="bp-pane on" id="bp-slowniczek" role="tabpanel">
     <div class="gl-item" id="def-kup">
-      <div class="gl-term">KUP (Koszty Uzyskania Przychodu)</div>
-      <div class="gl-def">Wydatki poniesione w celu osiągnięcia przychodów. Przy "użytku mieszanym" (prywatno-służbowym) aut osobowych do KUP zaliczasz <strong>75%</strong> kosztów używania (eksploatacja, paliwo). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong> kwoty netto (+ nieodliczony VAT), proporcjonalnie do limitu 225 tys. zł. Ubezpieczenie odlicza się proporcjonalnie do limitu wartości 150 tys. zł.</div>
+      <div class="gl-term">Koszty uzyskania przychodu</div>
+      <div class="gl-def">Wydatki poniesione w celu osiągnięcia przychodów. Przy "użytku mieszanym" (prywatno-służbowym) aut osobowych do kosztów podatkowych zaliczasz <strong>75%</strong> kosztów używania (eksploatacja, paliwo). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong> kwoty netto (+ nieodliczony VAT), proporcjonalnie do limitu 225 tys. zł. Ubezpieczenie odlicza się proporcjonalnie do limitu wartości 150 tys. zł.</div>
     </div>
     <div class="gl-item" id="def-amort">
       <div class="gl-term">Amortyzacja i limit 225 000 zł</div>
@@ -321,7 +317,7 @@
     </div>
     <div class="gl-item" id="def-vat">
       <div class="gl-term">Odliczenie VAT (50% vs 100%)</div>
-      <div class="gl-def">Przy użytku mieszanym odlicza się <strong>50% VAT</strong> (od zakupu, rat, eksploatacji). Nieodliczone 50% powiększa wartość netto i staje się kosztem uzyskania przychodu (KUP), co zmniejsza podatek dochodowy.</div>
+      <div class="gl-def">Przy użytku mieszanym odlicza się <strong>50% VAT</strong> (od zakupu, rat, eksploatacji). Nieodliczone 50% powiększa wartość netto i staje się kosztem uzyskania przychodu, co zmniejsza podatek dochodowy.</div>
     </div>
     <div class="gl-item" id="def-inv">
       <div class="gl-term">Inwestycja Alternatywna</div>
@@ -338,8 +334,8 @@
       <div class="gl-def">Samochody elektryczne amortyzowane są metodą liniową. Limit 225 000 zł. Nowe pojazdy: 20%/rok (60 mies.). Używane: 40%/rok (30 mies.) lub 20%/rok (60 mies.) — wybór stawki zależy od dochodu.</div>
     </div>
     <div class="gl-item">
-      <div class="gl-term">Odliczalność KUP</div>
-      <div class="gl-def">Limit <strong>75%</strong> dotyczy wyłącznie kosztów używania — eksploatacji, paliwa i opłat wstępnych o charakterze eksploatacyjnym (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong>. Ubezpieczenie: proporcjonalnie do limitu wartości 150 tys. zł. Wartość przekraczająca limit 225 tys. zł nie jest KUP.</div>
+      <div class="gl-term">Odliczalność kosztów</div>
+      <div class="gl-def">Limit <strong>75%</strong> dotyczy wyłącznie kosztów używania — eksploatacji, paliwa i opłat wstępnych o charakterze eksploatacyjnym (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020). Amortyzacja, raty leasingu (kapitał + odsetki) oraz odsetki kredytu są kosztem w <strong>100%</strong>. Ubezpieczenie: proporcjonalnie do limitu wartości 150 tys. zł. Wartość przekraczająca limit 225 tys. zł nie jest kosztem podatkowym.</div>
     </div>
     <div class="gl-item">
       <div class="gl-term">Mechanika rozliczenia wspólnego</div>
@@ -360,14 +356,14 @@
           <li><strong>Składka zdrowotna — minimum:</strong> przyjęto minimum dla roku składkowego luty 2026–styczeń 2027 (5 190,48 zł/rok, tj. 432,54 zł/mies.). Dokładne minimum kalendarzowego 2026 jest o ok. 117,58 zł/rok niższe. Minimum stosowane w ujęciu rocznym, nie miesięcznym.</li>
           <li><strong>Amortyzacja:</strong> pełny pierwszy rok odpisu (bez przesunięcia o miesiąc po wprowadzeniu do ewidencji — art. 22h).</li>
           <li><strong>Zaokrąglenia:</strong> podatek liczony bez zaokrągleń do pełnego złotego; pominięto daninę solidarnościową (4% powyżej 1 mln zł dochodu).</li>
-          <li><strong>Strata podatkowa:</strong> nadwyżka kosztów ponad dochód przepada — brak rozliczenia straty w kolejnych 5 latach (art. 9 ust. 3). Wynik konserwatywny, pokazywany jako „niewykorzystany KUP".</li>
+          <li><strong>Strata podatkowa:</strong> nadwyżka kosztów ponad dochód przepada — brak rozliczenia straty w kolejnych 5 latach (art. 9 ust. 3). Wynik konserwatywny, pokazywany jako „niewykorzystane koszty".</li>
           <li><strong>Leasing:</strong> czynsz inicjalny rozliczany proporcjonalnie w okresie umowy (nie jednorazowo); wykup ujęty w ratach zamiast jako odrębne nabycie; VAT przy leasingu finansowym modelowany w ratach, a nie z góry.</li>
           <li><strong>Dyskontowanie:</strong> wydatki dyskontowane na początek roku (1+CPI)^rok, korzyści podatkowe na koniec roku (1+CPI)^(rok+1); jednorazowe zwroty VAT w roku 0 bez dyskonta, zwroty bieżące jak wydatki — konwencja celowo ostrożna.</li>
           <li><strong>Ubezpieczenie:</strong> cała składka traktowana jak AC z limitem proporcji wartości 150 000 zł (art. 23 ust. 1 pkt 47); brak podziału na OC/AC — ostrożne dla części OC.</li>
-          <li><strong>75% KUP:</strong> limit 75% stosowany tylko do kosztów używania (eksploatacja, paliwo, opłaty wstępne o charakterze eksploatacyjnym). Amortyzacja, raty leasingu i odsetki kredytu są kosztem w 100% (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020).</li>
+          <li><strong>75% kosztów:</strong> limit 75% stosowany tylko do kosztów używania (eksploatacja, paliwo, opłaty wstępne o charakterze eksploatacyjnym). Amortyzacja, raty leasingu i odsetki kredytu są kosztem w 100% (art. 23 ust. 1 pkt 46a, objaśnienia MF z 9.04.2020).</li>
           <li><strong>Odliczenie zdrowotnej:</strong> modelowane — liniowy odlicza zapłaconą składkę od podstawy PIT do limitu 14 100 zł (2026), ryczałt pomniejsza przychód o 50% zapłaconej składki.</li>
           <li><strong>Etat:</strong> składka zdrowotna 9% od podanego dochodu netto (bez odtwarzania składek społecznych).</li>
-          <li><strong>Paliwo (podatnik VAT):</strong> oszczędność paliwowa liczona netto + 50% nieodliczalnego VAT, spójnie po stronie korzyści i KUP.</li>
+          <li><strong>Paliwo (podatnik VAT):</strong> oszczędność paliwowa liczona netto + 50% nieodliczalnego VAT, spójnie po stronie korzyści i kosztów.</li>
         </ol>
       </div>
     </div>

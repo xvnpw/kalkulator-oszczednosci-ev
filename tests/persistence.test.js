@@ -18,7 +18,7 @@ describe('Form configuration persistence', () => {
   it('exports EV_CONFIG_KEY and EV_CONFIG_VERSION', async () => {
     const script = await import('../script.js');
     expect(script.EV_CONFIG_KEY).toBe('ev-config');
-    expect(script.EV_CONFIG_VERSION).toBe(1);
+    expect(script.EV_CONFIG_VERSION).toBe(2);
   });
 
   it('saveConfig writes version, values, checks, carType, financing to localStorage', async () => {
@@ -53,7 +53,7 @@ describe('Form configuration persistence', () => {
 
   it('restoreConfig repopulates value and checkbox fields from saved config', async () => {
     localStorage.setItem('ev-config', JSON.stringify({
-      version: 1,
+      version: 2,
       carType: 'new',
       financing: 'cash',
       values: { p_inc: '333333', km: '20000' },
@@ -95,7 +95,7 @@ describe('Form configuration persistence', () => {
 
   it('restoreConfig skips unknown field ids without throwing', async () => {
     localStorage.setItem('ev-config', JSON.stringify({
-      version: 1,
+      version: 2,
       carType: 'new',
       financing: 'cash',
       values: { p_inc: '210000', nonexistent_field: 'abc' },
@@ -108,7 +108,7 @@ describe('Form configuration persistence', () => {
 
   it('restoreConfig restores carType=used and financing=leasing including UI state', async () => {
     localStorage.setItem('ev-config', JSON.stringify({
-      version: 1,
+      version: 2,
       carType: 'used',
       financing: 'leasing',
       values: {},
@@ -145,7 +145,7 @@ describe('Form configuration persistence', () => {
   it('reset button clears saved config and reloads the page', async () => {
     const script = await import('../script.js');
     localStorage.setItem(script.EV_CONFIG_KEY, JSON.stringify({
-      version: 1, carType: 'new', financing: 'cash', values: {}, checks: {}
+      version: 2, carType: 'new', financing: 'cash', values: {}, checks: {}
     }));
 
     const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
