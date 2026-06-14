@@ -85,6 +85,7 @@ Tests run in Vitest with `happy-dom` environment. Test files in `tests/`:
 | `phase3-vat-consistency.test.js` | Non-deductible 50% VAT in the KUP base; upfront/fuel VAT symmetry; refund timing |
 | `phase4-product-decisions.test.js` | 75% on operating costs only, insurance value-proportion cap, liniowy/ryczałt health deduction |
 | `phase5-robustness.test.js` | Throw-on-unknown-enum / `inflation ≤ −1` / degenerate-financing guards, `creditUnamortized`, constants |
+| `ryczalt-ui-simplification.test.js` | Ryczałt-only UI: `updateVisibility()` hides PIT/health/amortization noise (and restores it for skala/liniowy), `renderResults()` shows a VAT+fuel-only view |
 
 ## Polish Tax Domain
 
@@ -97,7 +98,11 @@ This app is hardcoded for Polish tax law (2026). Key rules:
   KUP shrinks health, the base shrinks less → the modeled shield claws back ~19% of the health drop.
 - `ryczalt` — revenue-based (3%–17%), tiered health, no joint filing, no KUP shield. Taxable revenue is
   reduced by social-contribution deductions (`pDed`) **and 50% of paid health**. The health *tier* stays
-  pinned to unreduced revenue, so car costs never change ryczałt savings (they remain 0).
+  pinned to unreduced revenue, so car costs never change ryczałt savings (they remain 0). Since PIT/health/
+  amortization are structurally inert for ryczałt, `updateVisibility()` hides that noise (rate selector,
+  "Przychód firmy", KUP/odliczenia, dochód/podatek and amortization value rows) and `renderResults()`
+  shows a VAT+fuel-only view (KPI relabeled "Zwrot VAT", baseline PIT block becomes an info note, per-year
+  accordion drops the PIT/health sub-sections) — presentation only, the underlying calc is unchanged.
 
 **EV depreciation limits:**
 - Depreciation cap: 225,000 PLN

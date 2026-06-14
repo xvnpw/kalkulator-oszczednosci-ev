@@ -105,10 +105,6 @@ function syncPrices(src){
   const usedDepRate = $('used_dep_rate')?.value || '0.40';
   if($('dep_rate_lv'))$('dep_rate_lv').textContent=carType==='new'?'20%/rok (60 mies.)':(usedDepRate==='0.20'?'20%/rok (60 mies.)':'40%/rok (30 mies.)');
 
-  const isDepAllowed = $('p_tax_form')?.value!=='ryczalt';
-  $('dep_base_lv')?.closest('.lv-row')?.classList.toggle('lv-row-muted', !isDepAllowed);
-  $('dep_rate_lv')?.closest('.lv-row')?.classList.toggle('lv-row-muted', !isDepAllowed);
-
   syncLeasingLive();syncCreditLive();
 }
 
@@ -245,6 +241,7 @@ function calc(){
 export function renderResults(d){
   const{rows,baseTax,totalTaxBefore,totalTaxAfter,cumTaxSav,cumRealTaxSav,cumHealthSav,cumFuelSav,cumRealFuelSav,totalSav,effectiveCost,totalFinCost,cumRealFinCost,invGross,invReal,calcYears,annualFuelCost,annualElCost,annualFuelSav,incCar,incFuel,incInv,isVAT,priceB,priceN,depBase,insKUP,maKUP,maVATDed,upfKUP,cumTotalKUP,totalInsur,totalMaint,cumVATRefund,cumRealVATRefund,purchaseVATRefund,opCostVATRefund,financing,lType,cumLostIncKUP,isKupAllowed,pSource,pTaxForm,pNet,sNet,jointFiling,pInc,cType,creditUnamortized}=d;
   const finNames={cash:'Gotówka',leasing:'Leasing',credit:'Kredyt'};
+  const isRyczalt = pTaxForm === 'ryczalt';
 
   $('sticky_total').textContent=zl(totalSav,0);
   $('sticky_total').className='rs-val'+(totalSav<0?' rs-neg':'');
@@ -257,9 +254,17 @@ export function renderResults(d){
   const debtInflSav = totalFinCost - cumRealFinCost;
   const taxReduxPct = totalTaxBefore>0 ? cumTaxSav/totalTaxBefore*100 : 0;
 
+  // D2(a): for ryczałt, the "Zaoszczędzony podatek" card is relabeled to "Zwrot VAT" — cumRealTaxSav
+  // is structurally 0 (no KUP shield), so the only tax-system benefit is the VAT refund (0 for a
+  // non-VAT payer, shown honestly as 0 zł rather than hiding the card).
+  // D1(a): the "obniżenie o X%" sub-line is dropped for ryczałt only (always 0,0% and ignores VAT).
+  const taxKpi = isRyczalt
+    ? `<div class="kpi kpi-g"><div class="lbl">Zwrot VAT <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Ryczałt nie pomniejsza podatku o koszty auta — jedyną korzyścią podatkową jest tu odliczenie/zwrot VAT z zakupu i eksploatacji (o ile jesteś płatnikiem VAT).</span></span></div><div class="val pos">${zl(cumRealVATRefund,0)}</div><div class="sub">realnie przez ${calcYears} lat</div></div>`
+    : `<div class="kpi kpi-g"><div class="lbl">Zaoszczędzony podatek <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Procent, o jaki zmniejszy się Twój całkowity podatek i/lub VAT do zapłaty dzięki kosztom działalności i odliczeniu VAT z auta — o ile dotyczy Twojej formy opodatkowania.</span></span></div><div class="val pos">${zl(cumRealTaxSav,0)}</div><div class="sub">obniżenie o ${pct(taxReduxPct)}</div></div>`;
+
   h+=`<div class="kpi-grid">
     <div class="kpi ${realPurchCost<0?'kpi-g':'kpi-b'}"><div class="lbl">Realny koszt zakupu <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie) pomniejszony o korzyści.</span></span></div><div class="val ${realPurchCost<0?'pos':''}">${zl(realPurchCost,0)}</div><div class="sub">TCO bez paliwa/prądu</div></div>
-    <div class="kpi kpi-g"><div class="lbl">Zaoszczędzony podatek <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Procent, o jaki zmniejszy się Twój całkowity podatek i/lub VAT do zapłaty dzięki kosztom działalności i odliczeniu VAT z auta — o ile dotyczy Twojej formy opodatkowania.</span></span></div><div class="val pos">${zl(cumRealTaxSav,0)}</div><div class="sub">obniżenie o ${pct(taxReduxPct)}</div></div>
+    ${taxKpi}
     ${incFuel?`<div class="kpi kpi-g"><div class="lbl">Oszczędność na paliwie</div><div class="val pos">${zl(cumRealFuelSav,0)}</div><div class="sub">realnie przez ${calcYears} lat</div></div>`:''}
     <div class="kpi ${effectiveCost<0?'kpi-g':'kpi-r'}"><div class="lbl">Realny koszt (TCO) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie + eksploatacja) pomniejszony o korzyści. <a href="#def-tco" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val ${effectiveCost<0?'pos':'neg'}">${zl(effectiveCost,0)}</div><div class="sub">fin − korzyści + ekspl.</div></div>
     ${incInv?`<div class="kpi kpi-pu"><div class="lbl">Inwestycja alt. (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Realny (po inflacji) zysk z alternatywnego zainwestowania kapitału przeznaczonego na auto. <a href="#def-inv" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val">${zl(invReal,0)}</div><div class="sub">zysk po inflacji CPI</div></div>`:''}
@@ -286,7 +291,7 @@ export function renderResults(d){
       <tr><td>Całkowity koszt finansowania (brutto)</td><td class="num">${zl(totalFinCost)}</td></tr>
       ${debtInflSav > 0 ? `<tr><td>− Zysk z inflacji na długu (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Korzyść wynikająca ze spłaty rat w przyszłości tańszym (zdeprecjonowanym przez inflację) pieniądzem.</span></span></td><td class="num" style="color:var(--g)">−${zl(debtInflSav)}</td></tr>` : ''}
       <tr><td>Skumulowany koszt finansowania (realnie)</td><td class="num">${zl(cumRealFinCost)}</td></tr>
-      <tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>
+      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
       ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
       <tr class="tot"><td><strong>Realny koszt zakupu</strong></td><td class="num" style="color:${realPurchCost<0?'var(--g)':'var(--r)'}">${zl(realPurchCost)}</td></tr>
     </table>
@@ -300,7 +305,7 @@ export function renderResults(d){
       ${debtInflSav > 0 ? `<tr><td>− Zysk z inflacji na długu (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Korzyść wynikająca ze spłaty rat w przyszłości tańszym (zdeprecjonowanym przez inflację) pieniądzem.</span></span></td><td class="num" style="color:var(--g)">−${zl(debtInflSav)}</td></tr>` : ''}
       <tr><td>+ Ubezpieczenie ${calcYears} lat</td><td class="num">${zl(totalInsur)}</td></tr>
       <tr><td>+ Eksploatacja ${calcYears} lat</td><td class="num">${zl(totalMaint)}</td></tr>
-      <tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>
+      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
       ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
       ${incFuel?`<tr><td>− Oszczędność paliwo→prąd (realnie)</td><td class="num" style="color:var(--b)">−${zl(cumRealFuelSav)}</td></tr>`:''}
       <tr class="tot"><td><strong>Realny koszt TCO</strong></td><td class="num" style="color:${effectiveCost<0?'var(--g)':'var(--r)'}">${zl(effectiveCost)}</td></tr>
@@ -366,7 +371,15 @@ export function renderResults(d){
   }
 
   // BASELINE BLOCK — pre-EV tax breakdown shown once above year list
-  {
+  if(isRyczalt){
+    // #10: ryczałt taxes revenue, not income — EV costs never change the PIT base, so a
+    // revenue × rate table would be noise. Replace it with a short info note, mirroring the
+    // "Koszty firmowe" / "Zwrot VAT" style used in the breakdown section above.
+    h += `<div class="bk" style="margin-bottom:14px">
+      <div class="bk-t">🧾 Podatek od przychodu (ryczałt)</div>
+      <div class="info" style="font-size:11px">Ryczałt ewidencjonowany liczy podatek od przychodu, a nie od dochodu — koszty samochodu (raty, amortyzacja, eksploatacja) nie zmieniają tej podstawy i nie obniżają podatku. Jedyną korzyścią podatkową z zakupu auta jest tu odliczenie/zwrot VAT (o ile jesteś płatnikiem VAT) oraz oszczędność na paliwie.</div>
+    </div>`;
+  } else {
     const baseNet = pNet + sNet;
     let baselineHTML = `<div class="bk" style="margin-bottom:14px">
       <div class="bk-t">🧾 Podatek PIT przed EV (punkt wyjścia)</div>
@@ -388,17 +401,20 @@ export function renderResults(d){
       const linDed = pNet - linBase;
       if(linDed>0) baselineHTML += `<tr><td>Podstawa: ${zl(pNet)} − ${zl(linDed)} (odliczona składka zdrow.)</td><td class="num">${zl(linBase)}</td></tr>`;
       baselineHTML += `<tr><td>${zl(linBase)} × 19%</td><td class="num">${zl(baseTax)}</td></tr>`;
-    } else if(pTaxForm==='ryczalt'){
-      // D2: revenue is reduced by social contributions and 50% of the paid health contribution.
-      const ryczRev = d.baseRyczaltRevenue ?? pInc;
-      if(ryczRev !== pInc) baselineHTML += `<tr><td>Przychód po odliczeniach (składki): ${zl(pInc)}</td><td class="num">${zl(ryczRev)}</td></tr>`;
-      baselineHTML += `<tr><td>${zl(ryczRev)} × ${pct(parseFloat(d.rows[0]?.afterBrackets?.rate||0)*100)}</td><td class="num">${zl(baseTax)}</td></tr>`;
     }
     baselineHTML += `</table></div>`;
     h += baselineHTML;
   }
 
   // YEAR TABLE
+  if(isRyczalt && !isVAT){
+    // D5: ryczałt + non-VAT payer has no per-year tax content at all (no KUP shield, no VAT
+    // refund) — show a single info note instead of a list of empty accordions.
+    h+=`<div>
+      <div class="bk-t" style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--t2)">📅 Rozliczenie rok po roku (Krok po kroku)</div>
+      <div class="info" style="font-size:11px">Ta forma opodatkowania nie generuje korzyści podatkowych z auta — jedyną oszczędnością jest tu różnica w kosztach napędu (paliwo vs prąd), pokazana powyżej.</div>
+    </div>`;
+  } else {
   h+=`<div>
     <div class="bk-t" style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--t2)">📅 Rozliczenie rok po roku (Krok po kroku)</div>
     <div class="sbs-wrap">
@@ -406,11 +422,15 @@ export function renderResults(d){
       <details class="sbs-det">
         <summary class="sbs-sum">
           <div class="sbs-s-left"><span class="bdg bdg-b" style="margin-right:8px">Rok ${r.y}</span></div>
-          <div class="sbs-s-right">Realna oszczędność PIT: <strong style="color:var(--g)">${zl(r.realTaxSav)}</strong></div>
+          ${isRyczalt
+            ? `<div class="sbs-s-right">Zwrot VAT (realnie): <strong style="color:var(--g)">${zl(r.vatRefundRealY)}</strong></div>`
+            : `<div class="sbs-s-right">Realna oszczędność PIT: <strong style="color:var(--g)">${zl(r.realTaxSav)}</strong></div>`}
         </summary>
         <div class="sbs-body">
+          ${!isRyczalt ? `
           <div class="sbs-row"><div class="sbs-lbl">Podstawa opodatkowania (Przed EV)</div><div class="sbs-val">${zl(r.taxBaseBefore)}</div></div>
           <div class="sbs-row"><div class="sbs-lbl">Należny podatek (Przed EV)</div><div class="sbs-val" style="color:var(--r)">${zl(r.baseTax)}</div></div>
+          ` : ''}
           ${incCar?(isKupAllowed?`
           <div class="sbs-div">Koszty związane z EV:</div>
           ${financing==='leasing' && lType==='oper' ? `
@@ -427,6 +447,7 @@ export function renderResults(d){
           <div class="sbs-div">Koszty związane z EV:</div>
           <div class="sbs-row"><div class="sbs-lbl" style="color:var(--t3)">Wybrana forma opodatkowania (ryczałt ewidencjonowany) nie pozwala na rozliczanie kosztów samochodu ani amortyzacji.${isVAT ? ' Jedyną korzyścią jest tu odliczenie/zwrot VAT — patrz sekcja „Zwrot VAT”.' : ''}</div></div>
           `):''}
+          ${!isRyczalt ? `
           <div class="sbs-row"><div class="sbs-lbl">Podstawa opodatkowania (Po EV)</div><div class="sbs-val">${zl(r.taxBaseAfter)}</div></div>
           <div class="sbs-row"><div class="sbs-lbl">Należny podatek (Po EV)</div><div class="sbs-val" style="color:var(--g)">${zl(r.taxWith)}</div></div>
           <div class="sbs-row sbs-tot" style="margin-top:8px;border-top:1px dashed var(--b2);padding-top:8px"><div class="sbs-lbl">Oszczędność w podatku PIT (Delta nominalna)</div><div class="sbs-val" style="color:var(--g)">${zl(r.taxSav)}</div></div>
@@ -447,16 +468,13 @@ export function renderResults(d){
               // D2: base is pNetY net of the deducted health contribution (afterBrackets.base), so × 19% matches taxWith.
               ps+='<div class="sbs-row sbs-sub"><div class="sbs-lbl">'+zl(r.afterBrackets.base)+' × 19%</div><div class="sbs-val">'+zl(r.taxWith)+'</div></div>';
             }
-            if(r.afterBrackets && r.afterBrackets.type==='ryczalt'){
-              ps+='<div class="sbs-row sbs-sub"><div class="sbs-lbl">'+zl(r.afterBrackets.revenue)+' × '+pct(r.afterBrackets.rate*100)+'</div><div class="sbs-val">'+zl(r.taxWith)+'</div></div>';
-            }
             ps+='<div class="sbs-row sbs-tot" style="border-top:1px dashed var(--bd);padding-top:4px;margin-top:4px"><div class="sbs-lbl">Oszczędność PIT (Δ podatek)</div><div class="sbs-val" style="color:var(--g)">'+zl(r.taxSav)+'</div></div>';
             if(r.lostIncKUP>0) ps+='<div class="sbs-row sbs-sub" style="color:var(--y)"><div class="sbs-lbl">Utracone koszty (koszty EV przekraczają dochód): max(0, '+zl(r.netCostKUP)+' − '+zl(pNet)+')</div><div class="sbs-val">'+zl(r.lostIncKUP)+'</div></div>';
             ps+='<div class="sbs-row sbs-sub" style="font-size:10.5px;color:var(--t3)"><div class="sbs-lbl">Stawka krańcowa (szacunek Δ podatku/zł kosztów)</div><div class="sbs-val">'+Math.round(r.mr*100)+'%</div></div>';
             ps+='</div></details>';
             return ps;
           })()}
-          ${pSource==='dg'
+          ${pSource==='dg' && !isRyczalt
             ? '<details class="sbs-sub-det"><summary class="sbs-sub-sum">🏥 Składka zdrowotna</summary><div class="sbs-sub-body">'
               + (r.healthDetail && r.healthDetail.tier
                 ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Tier ryczałtu (przychody ' + r.healthDetail.tier + ')</div><div class="sbs-val">podstawa: ' + zl(r.healthDetail.base) + ' zł/mies.</div></div>'
@@ -469,6 +487,7 @@ export function renderResults(d){
               + '<div class="sbs-row sbs-tot" style="border-top:1px dashed var(--bd);padding-top:4px;margin-top:4px"><div class="sbs-lbl">Oszczędność na składce</div><div class="sbs-val" style="color:var(--g)">' + zl(r.healthSav) + '</div></div>'
               + '</div></details>'
             : ''}
+          ` : ''}
           ${isVAT
             ? '<details class="sbs-sub-det"><summary class="sbs-sub-sum">🧾 VAT</summary><div class="sbs-sub-body">'
               + (r.purchaseVATRefundY>0 ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Zwrot VAT przy zakupie: (' + zl(priceB) + ' − ' + zl(priceN) + ') × 50%</div><div class="sbs-val" style="color:var(--g)">' + zl(r.purchaseVATRefundY) + '</div></div>' : '')
@@ -531,12 +550,17 @@ export function renderResults(d){
       `).join('')}
     </div>
   </div>`;
+  }
 
   if(financing==='credit'&&cType==='standard'&&creditUnamortized>1){
     h+=`<div class="info" style="margin-top:8px;font-size:11px;color:var(--r)">⚠️ Rata nie spłaca kredytu w całości — po okresie pozostaje ${zl(creditUnamortized)} niespłaconego kapitału (kredyt balonowy). Ta część nie generuje odsetek zaliczanych do kosztów w kolejnych latach.</div>`;
   }
 
-  h+=`<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Koszty używania (eksploatacja, paliwo): <strong>75% kosztów</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% kosztów</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
+  // A2: the default disclaimer talks about 75% operating-cost deductibility and amortization —
+  // both irrelevant for ryczałt (no KUP shield). Swap to a ryczałt-tailored one-liner.
+  h+= isRyczalt
+    ? `<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Ryczałt ewidencjonowany nie pomniejsza podatku o koszty samochodu. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`
+    : `<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Koszty używania (eksploatacja, paliwo): <strong>75% kosztów</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% kosztów</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
 
   $('res_body').innerHTML=h;
 }
@@ -608,11 +632,34 @@ export function updateVisibility() {
   // Taxpayer is always DG — VAT toggle is always available.
   if ($('p_vat_container')) $('p_vat_container').classList.remove('hidden');
 
-  if (pForm === 'ryczalt') {
-    if ($('p_ryczalt_rate_container')) $('p_ryczalt_rate_container').classList.remove('hidden');
-  } else {
-    if ($('p_ryczalt_rate_container')) $('p_ryczalt_rate_container').classList.add('hidden');
-  }
+  // #1: "Stawka ryczałtu" is always hidden now — the engine still uses its default 0.085, but the
+  // rate has no effect on any visible savings/TCO figure for ryczałt, so it's no longer surfaced.
+  $('p_ryczalt_rate_container')?.classList.add('hidden');
+
+  // Ryczałt simplification: tax base / income / KUP / deductions / dep rows are structurally either
+  // zero or have no effect on visible savings for ryczałt (see plan/ryczalt-ui-simplification.md).
+  // Hide them via .hidden — never remove from the DOM (e2e/ui tests read these nodes), and toggling
+  // back to skala/liniowy restores everything.
+  const isRyczalt = pForm === 'ryczalt';
+  const hide = (el, on) => el && el.classList.toggle('hidden', on);
+
+  hide($('p_inc')?.closest('.f'), isRyczalt);                // #2 — "Przychód firmy — bez VAT"
+  hide($('p_kup')?.closest('.f2'), isRyczalt);               // #3 + #4 — "Koszty działalności" + "Odliczenia od dochodu"
+  hide($('p_net_lv')?.closest('.lv-row'), isRyczalt);        // #5a — "Dochód po odliczeniach"
+  hide($('p_tax_lv')?.closest('.lv-row'), isRyczalt);        // #5b — "Należny podatek (przed odliczeniem EV)"
+  hide($('dep_base_lv')?.closest('.lv-row'), isRyczalt);     // #6a — "Podstawa amortyzacji"
+  hide($('dep_rate_lv')?.closest('.lv-row'), isRyczalt);     // #6b — "Stawka amortyzacji"
+
+  // #7 / D3(b): amortization-claim text is irrelevant for ryczałt (no KUP shield) — hide in all
+  // three places it appears.
+  hide($('cash_amort_info'), isRyczalt);                     // #tc_cash info box
+  hide($('credit_amort_info'), isRyczalt);                   // credit-tab amortization line
+  if ($('l_type_oper')) $('l_type_oper').textContent = isRyczalt
+    ? 'Operacyjny'
+    : 'Operacyjny — raty w całości w kosztach (kapitał + odsetki)';
+  if ($('l_type_fin')) $('l_type_fin').textContent = isRyczalt
+    ? 'Finansowy'
+    : 'Finansowy — amortyzacja + odsetki w kosztach';
 
   const sSource = $('s_source')?.value || 'etat';
   if (sSource === 'dg') {

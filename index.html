@@ -194,14 +194,14 @@
       </div>
 
       <div class="tc on" id="tc_cash">
-        <div class="info"><strong>Amortyzacja liniowa:</strong><br>• Nowy: 20%/rok → 60 mies.&nbsp;&nbsp;• Używany: 40%/rok → 30 mies.<br>• Limit EV: <strong>225 000 zł</strong>&nbsp;&nbsp;• Odpis amortyzacyjny w <strong>100%</strong> w kosztach</div>
+        <div class="info" id="cash_amort_info"><strong>Amortyzacja liniowa:</strong><br>• Nowy: 20%/rok → 60 mies.&nbsp;&nbsp;• Używany: 40%/rok → 30 mies.<br>• Limit EV: <strong>225 000 zł</strong>&nbsp;&nbsp;• Odpis amortyzacyjny w <strong>100%</strong> w kosztach</div>
       </div>
 
       <div class="tc" id="tc_leasing">
         <div class="f"><label>Typ leasingu</label>
           <select id="l_type">
-            <option value="oper">Operacyjny — raty w całości w kosztach (kapitał + odsetki)</option>
-            <option value="fin">Finansowy — amortyzacja + odsetki w kosztach</option>
+            <option value="oper" id="l_type_oper">Operacyjny — raty w całości w kosztach (kapitał + odsetki)</option>
+            <option value="fin" id="l_type_fin">Finansowy — amortyzacja + odsetki w kosztach</option>
           </select>
         </div>
         <div class="f2">
@@ -244,7 +244,7 @@
         <div class="lv-row"><span>Kwota kredytu:</span><span class="lv" id="c_principal_lv">—</span></div>
         <div class="lv-row"><span>Szacunkowe łączne odsetki / koszty:</span><span class="lv" id="c_int_lv">—</span></div>
         <div class="lv-row"><span>Całkowity koszt brutto:</span><span class="lv" id="c_total_lv">—</span></div>
-        <div class="info" style="margin-top:8px">Odsetki / prowizja → koszty w <strong>100%</strong> · Wartość netto → amortyzacja (limit 225 tys.)</div>
+        <div class="info" style="margin-top:8px" id="credit_amort_info">Odsetki / prowizja → koszty w <strong>100%</strong> · Wartość netto → amortyzacja (limit 225 tys.)</div>
       </div>
     </div>
   </div>

@@ -167,8 +167,6 @@ table.dt tr:last-child td{border-bottom:none}
 /* LIVE ROW */
 .lv-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11.5px;color:var(--t3)}
 .lv-row .lv{font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;color:var(--t2)}
-.lv-row.lv-row-muted{opacity:.4}
-.lv-row.lv-row-muted .lv{color:var(--t3)}
 
 /* STICKY HEADER */
 .res-sticky{position:sticky;top:0;z-index:10;background:var(--s0);border-bottom:1px solid var(--bd);padding:10px 16px;display:flex;align-items:center;gap:10px}
