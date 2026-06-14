@@ -85,7 +85,7 @@ Tests run in Vitest with `happy-dom` environment. Test files in `tests/`:
 | `phase3-vat-consistency.test.js` | Non-deductible 50% VAT in the KUP base; upfront/fuel VAT symmetry; refund timing |
 | `phase4-product-decisions.test.js` | 75% on operating costs only, insurance value-proportion cap, liniowy/ryczałt health deduction |
 | `phase5-robustness.test.js` | Throw-on-unknown-enum / `inflation ≤ −1` / degenerate-financing guards, `creditUnamortized`, constants |
-| `ryczalt-ui-simplification.test.js` | Ryczałt-only UI: `updateVisibility()` hides PIT/health/amortization noise (and restores it for skala/liniowy), `renderResults()` shows a VAT+fuel-only view |
+| `ryczalt-ui-simplification.test.js` | Ryczałt-only UI: `updateVisibility()` hides PIT/health/amortization noise — taxpayer-panel rows **and** car/financing KUP-only items (eksploatacja footnote, `used_dep_rate_row`, `l_kup_lv`, `c_rate`) — and restores them for skala/liniowy; `renderResults()` shows a VAT+fuel-only view |
 
 ## Polish Tax Domain
 
@@ -99,10 +99,16 @@ This app is hardcoded for Polish tax law (2026). Key rules:
 - `ryczalt` — revenue-based (3%–17%), tiered health, no joint filing, no KUP shield. Taxable revenue is
   reduced by social-contribution deductions (`pDed`) **and 50% of paid health**. The health *tier* stays
   pinned to unreduced revenue, so car costs never change ryczałt savings (they remain 0). Since PIT/health/
-  amortization are structurally inert for ryczałt, `updateVisibility()` hides that noise (rate selector,
-  "Przychód firmy", KUP/odliczenia, dochód/podatek and amortization value rows) and `renderResults()`
-  shows a VAT+fuel-only view (KPI relabeled "Zwrot VAT", baseline PIT block becomes an info note, per-year
-  accordion drops the PIT/health sub-sections) — presentation only, the underlying calc is unchanged.
+  amortization are structurally inert for ryczałt, `updateVisibility()` hides that noise: the taxpayer-panel
+  set (rate selector, "Przychód firmy", KUP/odliczenia, dochód/podatek and amortization value rows) **plus**
+  the car/financing KUP-only set — the eksploatacja footnote (`oper_cost_note`, swapped to VAT-only for a VAT
+  payer and hidden for a non-VAT payer), the used-car amortization-rate selector (`used_dep_rate_row`; the
+  `used_vat_row` stays, as `used_vat` still drives the VAT refund), the leasing KUP total (`l_kup_lv`) and the
+  credit APR field (`c_rate`, feeds only the inert interest schedule). `renderResults()` shows a VAT+fuel-only
+  view (KPI relabeled "Zwrot VAT", baseline PIT block becomes an info note, per-year accordion drops the
+  PIT/health sub-sections) — presentation only, the underlying calc is unchanged. Hidden fields keep their
+  default/persisted values flowing to the engine (hide-don't-remove); the rules live in `updateVisibility()`
+  (and a shared `syncUsedRows()` helper for the car-type × tax-form used-row visibility).
 
 **EV depreciation limits:**
 - Depreciation cap: 225,000 PLN

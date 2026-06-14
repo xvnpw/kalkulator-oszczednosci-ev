@@ -55,12 +55,20 @@ function pct(x){return fmt(x,1)+'%'}
 // ── UI CONTROLS ───────────────────────────────────
 function clps(h){h.classList.toggle('open');h.nextElementSibling.classList.toggle('open')}
 
+// WP2: used_dep_rate_row visibility depends on BOTH carType (set here) and tax form (set in
+// updateVisibility()) — a shared helper avoids the two call sites fighting over style.display.
+// used_vat_row stays on the pure carType==='used' rule (it gates the VAT refund even for ryczałt).
+function syncUsedRows(){
+  const pForm = $('p_tax_form')?.value || 'skala';
+  if($('used_dep_rate_row')) $('used_dep_rate_row').style.display=(carType==='used'&&pForm!=='ryczalt')?'block':'none';
+  if($('used_vat_row')) $('used_vat_row').style.display=carType==='used'?'block':'none';
+}
+
 function setCarType(t,btn){
   carType=t;
   $('car_type_pills').querySelectorAll('.rpill').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  $('used_vat_row').style.display=t==='used'?'block':'none';
-  if($('used_dep_rate_row')) $('used_dep_rate_row').style.display=t==='used'?'block':'none';
+  syncUsedRows();
   syncPrices('b');calc();
 }
 
@@ -582,6 +590,8 @@ const INC_HINT_ETAT =
   + '<span class="x">✕ to nie jest kwota „na rękę” / przelew na konto</span>';
 const KUP_TT_DG = 'Koszty firmowe (faktury, amortyzacja itp.) — bez VAT, jeśli go odliczasz.';
 const KUP_TT_RYCZALT = 'Ryczałt nie uwzględnia kosztów działalności.';
+const OPER_COST_NOTE_FULL = 'Eksploatacja: <strong>75% netto + nieodliczony VAT → koszty</strong>. Ubezpieczenie: proporcjonalnie do <strong>limitu wartości 150 tys. zł</strong>. VAT: <strong>50% odliczalne</strong> (użytek mieszany).';
+const OPER_COST_NOTE_VAT_ONLY = 'VAT: <strong>50% odliczalne</strong> (użytek mieszany).';
 
 export function updateVisibility() {
   const pForm = $('p_tax_form')?.value || 'skala';
@@ -650,6 +660,10 @@ export function updateVisibility() {
   hide($('dep_base_lv')?.closest('.lv-row'), isRyczalt);     // #6a — "Podstawa amortyzacji"
   hide($('dep_rate_lv')?.closest('.lv-row'), isRyczalt);     // #6b — "Stawka amortyzacji"
 
+  // WP3: leasing/credit cards — hide KUP-only fields/figures inert for ryczałt.
+  hide($('l_kup_lv')?.closest('.lv-row'), isRyczalt);        // "Łączne koszty przez okres" — KUP total (d+i*m+b)*0.75
+  hide($('c_rate')?.closest('.f'), isRyczalt);               // "Oprocentowanie roczne" — feeds only KUP interest schedule
+
   // #7 / D3(b): amortization-claim text is irrelevant for ryczałt (no KUP shield) — hide in all
   // three places it appears.
   hide($('cash_amort_info'), isRyczalt);                     // #tc_cash info box
@@ -660,6 +674,22 @@ export function updateVisibility() {
   if ($('l_type_fin')) $('l_type_fin').textContent = isRyczalt
     ? 'Finansowy'
     : 'Finansowy — amortyzacja + odsetki w kosztach';
+
+  // WP1: "Eksploatacja: 75% netto..." footnote is a KUP/insurance-cap note — both clauses are inert
+  // for ryczałt. Only the VAT clause remains relevant, and only for a VAT payer.
+  const isVAT = $('p_vat')?.checked || false;
+  if ($('oper_cost_note')) {
+    const note = $('oper_cost_note');
+    if (!isRyczalt) {
+      note.innerHTML = OPER_COST_NOTE_FULL;
+      note.classList.remove('hidden');
+    } else if (isVAT) {
+      note.innerHTML = OPER_COST_NOTE_VAT_ONLY;
+      note.classList.remove('hidden');
+    } else {
+      note.classList.add('hidden');
+    }
+  }
 
   const sSource = $('s_source')?.value || 'etat';
   if (sSource === 'dg') {
@@ -674,6 +704,9 @@ export function updateVisibility() {
   if ($('s_inc_hint')) $('s_inc_hint').innerHTML = sSource === 'dg' ? INC_HINT_DG_SPOUSE : INC_HINT_ETAT;
 
   if ($('s_tax_form')) $('s_tax_form').value = 'skala';
+
+  // WP2: re-sync used_dep_rate_row / used_vat_row now that pForm is known (see syncUsedRows()).
+  syncUsedRows();
 }
 
 // ── INIT ──────────────────────────────────────────
