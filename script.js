@@ -41,7 +41,7 @@ const CONFIG_VALUE_IDS = [
   'cpi','inv_r',
 ];
 
-const CONFIG_CHECK_IDS = ['p_vat','joint_filing','s_vat'];
+const CONFIG_CHECK_IDS = ['p_vat','joint_filing','s_vat','cpi_toggle'];
 
 function fmt(x,d=0){
   if(x===null||!isFinite(x))return '—';
@@ -164,6 +164,8 @@ function syncCreditLive(){
 function calc(){
   syncPrices('b');syncLeasingLive();syncCreditLive();
 
+  const inflOn = cb('cpi_toggle');
+
   const inputs = {
     carType, financing,
     pInc: n('p_inc'), pKup: n('p_kup'), pDed: n('p_ded'),
@@ -185,8 +187,8 @@ function calc(){
     lD: n('l_down'), lB: n('l_buy'), lM: n('l_months'), lI: n('l_inst'),
     cType: $('c_type')?.value||'standard',
     cD: n('c_down'), cIB: n('c_inst'), cM: n('c_months'), cR: n('c_rate')/100, fee: n('c_fee'),
-    inflation: n('cpi')/100, investReturn: n('inv_r')/100,
-    incCar: true, incFuel: true, incInv: true,
+    inflation: inflOn ? n('cpi')/100 : 0, investReturn: n('inv_r')/100,
+    incCar: true, incFuel: true, incInv: inflOn,
     kmYear: n('km'), fuelL: n('fuel_l'), fuelP: n('fuel_p'), evKwh: n('ev_kwh'), elP: n('el_p')
   };
 
@@ -228,6 +230,7 @@ function calc(){
     if($('h_tax_lv'))$('h_tax_lv').textContent=zl(res.baseTax/2);
     if($('w_tax_lv'))$('w_tax_lv').textContent=zl(res.baseTax/2);
 
+    res.inflationOn = inflOn;
     renderResults(res);
   } catch (e) {
     // During init()'s config restore, re-throw so its destructive recovery (discard the corrupt
@@ -250,6 +253,9 @@ export function renderResults(d){
   const{rows,baseTax,totalTaxBefore,totalTaxAfter,cumTaxSav,cumRealTaxSav,cumHealthSav,cumFuelSav,cumRealFuelSav,totalSav,effectiveCost,totalFinCost,cumRealFinCost,invGross,invReal,calcYears,annualFuelCost,annualElCost,annualFuelSav,incCar,incFuel,incInv,isVAT,priceB,priceN,depBase,insKUP,maKUP,maVATDed,upfKUP,cumTotalKUP,totalInsur,totalMaint,cumVATRefund,cumRealVATRefund,purchaseVATRefund,opCostVATRefund,financing,lType,cumLostIncKUP,isKupAllowed,pSource,pTaxForm,pNet,sNet,jointFiling,pInc,cType,creditUnamortized}=d;
   const finNames={cash:'Gotówka',leasing:'Leasing',credit:'Kredyt'};
   const isRyczalt = pTaxForm === 'ryczalt';
+  // Inflation-CPI toggle: absent (e.g. renderResults called directly in tests) → default ON, so
+  // existing renderResults-direct tests keep today's "realny/realnie" wording.
+  const inflationOn = d.inflationOn !== false;
 
   $('sticky_total').textContent=zl(totalSav,0);
   $('sticky_total').className='rs-val'+(totalSav<0?' rs-neg':'');
@@ -267,14 +273,14 @@ export function renderResults(d){
   // non-VAT payer, shown honestly as 0 zł rather than hiding the card).
   // D1(a): the "obniżenie o X%" sub-line is dropped for ryczałt only (always 0,0% and ignores VAT).
   const taxKpi = isRyczalt
-    ? `<div class="kpi kpi-g"><div class="lbl">Zwrot VAT <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Ryczałt nie pomniejsza podatku o koszty auta — jedyną korzyścią podatkową jest tu odliczenie/zwrot VAT z zakupu i eksploatacji (o ile jesteś płatnikiem VAT).</span></span></div><div class="val pos">${zl(cumRealVATRefund,0)}</div><div class="sub">realnie przez ${calcYears} lat</div></div>`
+    ? `<div class="kpi kpi-g"><div class="lbl">Zwrot VAT <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Ryczałt nie pomniejsza podatku o koszty auta — jedyną korzyścią podatkową jest tu odliczenie/zwrot VAT z zakupu i eksploatacji (o ile jesteś płatnikiem VAT).</span></span></div><div class="val pos">${zl(cumRealVATRefund,0)}</div><div class="sub">${inflationOn?'realnie ':''}przez ${calcYears} lat</div></div>`
     : `<div class="kpi kpi-g"><div class="lbl">Zaoszczędzony podatek <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Procent, o jaki zmniejszy się Twój całkowity podatek i/lub VAT do zapłaty dzięki kosztom działalności i odliczeniu VAT z auta — o ile dotyczy Twojej formy opodatkowania.</span></span></div><div class="val pos">${zl(cumRealTaxSav,0)}</div><div class="sub">obniżenie o ${pct(taxReduxPct)}</div></div>`;
 
   h+=`<div class="kpi-grid">
-    <div class="kpi ${realPurchCost<0?'kpi-g':'kpi-b'}"><div class="lbl">Realny koszt zakupu <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie) pomniejszony o korzyści.</span></span></div><div class="val ${realPurchCost<0?'pos':''}">${zl(realPurchCost,0)}</div><div class="sub">TCO bez paliwa/prądu</div></div>
+    <div class="kpi ${realPurchCost<0?'kpi-g':'kpi-b'}"><div class="lbl">${inflationOn?'Realny koszt zakupu':'Koszt zakupu'} <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie) pomniejszony o korzyści.</span></span></div><div class="val ${realPurchCost<0?'pos':''}">${zl(realPurchCost,0)}</div><div class="sub">TCO bez paliwa/prądu</div></div>
     ${taxKpi}
-    ${incFuel?`<div class="kpi kpi-g"><div class="lbl">Oszczędność na paliwie</div><div class="val pos">${zl(cumRealFuelSav,0)}</div><div class="sub">realnie przez ${calcYears} lat</div></div>`:''}
-    <div class="kpi ${effectiveCost<0?'kpi-g':'kpi-r'}"><div class="lbl">Realny koszt (TCO) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie + eksploatacja) pomniejszony o korzyści. <a href="#def-tco" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val ${effectiveCost<0?'pos':'neg'}">${zl(effectiveCost,0)}</div><div class="sub">fin − korzyści + ekspl.</div></div>
+    ${incFuel?`<div class="kpi kpi-g"><div class="lbl">Oszczędność na paliwie</div><div class="val pos">${zl(cumRealFuelSav,0)}</div><div class="sub">${inflationOn?'realnie ':''}przez ${calcYears} lat</div></div>`:''}
+    <div class="kpi ${effectiveCost<0?'kpi-g':'kpi-r'}"><div class="lbl">${inflationOn?'Realny koszt (TCO)':'Koszt (TCO)'} <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Całkowity koszt posiadania (finansowanie + eksploatacja) pomniejszony o korzyści. <a href="#def-tco" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val ${effectiveCost<0?'pos':'neg'}">${zl(effectiveCost,0)}</div><div class="sub">fin − korzyści + ekspl.</div></div>
     ${incInv?`<div class="kpi kpi-pu"><div class="lbl">Inwestycja alt. (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Realny (po inflacji) zysk z alternatywnego zainwestowania kapitału przeznaczonego na auto. <a href="#def-inv" class="tt-link">Czytaj więcej →</a></span></span></div><div class="val">${zl(invReal,0)}</div><div class="sub">zysk po inflacji CPI</div></div>`:''}
     ${cumLostIncKUP>0?`<div class="kpi kpi-y"><div class="lbl">Utracone koszty (niski dochód) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Niewykorzystana kwota kosztów z powodu zbyt niskiego dochodu.</span></span></div><div class="val neg">${zl(cumLostIncKUP,0)}</div><div class="sub">nieodliczone koszty</div></div>`:''}
   </div>`;
@@ -294,14 +300,14 @@ export function renderResults(d){
 
   // 1. REALNY KOSZT ZAKUPU
   h+=`<div class="bk">
-    <div class="bk-t">🚗 Realny koszt zakupu</div>
+    <div class="bk-t">🚗 ${inflationOn?'Realny koszt zakupu':'Koszt zakupu'}</div>
     <table class="dt">
       <tr><td>Całkowity koszt finansowania (brutto)</td><td class="num">${zl(totalFinCost)}</td></tr>
       ${debtInflSav > 0 ? `<tr><td>− Zysk z inflacji na długu (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Korzyść wynikająca ze spłaty rat w przyszłości tańszym (zdeprecjonowanym przez inflację) pieniądzem.</span></span></td><td class="num" style="color:var(--g)">−${zl(debtInflSav)}</td></tr>` : ''}
-      <tr><td>Skumulowany koszt finansowania (realnie)</td><td class="num">${zl(cumRealFinCost)}</td></tr>
-      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
-      ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
-      <tr class="tot"><td><strong>Realny koszt zakupu</strong></td><td class="num" style="color:${realPurchCost<0?'var(--g)':'var(--r)'}">${zl(realPurchCost)}</td></tr>
+      ${inflationOn ? `<tr><td>Skumulowany koszt finansowania (realnie)</td><td class="num">${zl(cumRealFinCost)}</td></tr>` : ''}
+      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'}${inflationOn?' (realnie)':''}</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
+      ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT${inflationOn?' (realnie)':''}</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
+      <tr class="tot"><td><strong>${inflationOn?'Realny koszt zakupu':'Koszt zakupu'}</strong></td><td class="num" style="color:${realPurchCost<0?'var(--g)':'var(--r)'}">${zl(realPurchCost)}</td></tr>
     </table>
   </div>`;
 
@@ -313,10 +319,10 @@ export function renderResults(d){
       ${debtInflSav > 0 ? `<tr><td>− Zysk z inflacji na długu (realnie) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt" style="white-space: normal; min-width: 250px;">Korzyść wynikająca ze spłaty rat w przyszłości tańszym (zdeprecjonowanym przez inflację) pieniądzem.</span></span></td><td class="num" style="color:var(--g)">−${zl(debtInflSav)}</td></tr>` : ''}
       <tr><td>+ Ubezpieczenie ${calcYears} lat</td><td class="num">${zl(totalInsur)}</td></tr>
       <tr><td>+ Eksploatacja ${calcYears} lat</td><td class="num">${zl(totalMaint)}</td></tr>
-      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'} (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
-      ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT (realnie)</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
-      ${incFuel?`<tr><td>− Oszczędność paliwo→prąd (realnie)</td><td class="num" style="color:var(--b)">−${zl(cumRealFuelSav)}</td></tr>`:''}
-      <tr class="tot"><td><strong>Realny koszt TCO</strong></td><td class="num" style="color:${effectiveCost<0?'var(--g)':'var(--r)'}">${zl(effectiveCost)}</td></tr>
+      ${!isRyczalt ? `<tr><td>${cumHealthSav > 0 ? '− Oszczędność podatkowa i zdrowotna' : '− Oszczędność podatkowa'}${inflationOn?' (realnie)':''}</td><td class="num" style="color:var(--g)">−${zl(cumRealTaxSav)}</td></tr>` : ''}
+      ${cumRealVATRefund > 0 ? `<tr><td>− Zwrot VAT${inflationOn?' (realnie)':''}</td><td class="num" style="color:var(--g)">−${zl(cumRealVATRefund)}</td></tr>` : ''}
+      ${incFuel?`<tr><td>− Oszczędność paliwo→prąd${inflationOn?' (realnie)':''}</td><td class="num" style="color:var(--b)">−${zl(cumRealFuelSav)}</td></tr>`:''}
+      <tr class="tot"><td><strong>${inflationOn?'Realny koszt TCO':'Koszt TCO'}</strong></td><td class="num" style="color:${effectiveCost<0?'var(--g)':'var(--r)'}">${zl(effectiveCost)}</td></tr>
     </table>
   </div>`;
 
@@ -431,8 +437,8 @@ export function renderResults(d){
         <summary class="sbs-sum">
           <div class="sbs-s-left"><span class="bdg bdg-b" style="margin-right:8px">Rok ${r.y}</span></div>
           ${isRyczalt
-            ? `<div class="sbs-s-right">Zwrot VAT (realnie): <strong style="color:var(--g)">${zl(r.vatRefundRealY)}</strong></div>`
-            : `<div class="sbs-s-right">Realna oszczędność PIT: <strong style="color:var(--g)">${zl(r.realTaxSav)}</strong></div>`}
+            ? `<div class="sbs-s-right">Zwrot VAT${inflationOn?' (realnie)':''}: <strong style="color:var(--g)">${zl(r.vatRefundRealY)}</strong></div>`
+            : `<div class="sbs-s-right">${inflationOn?'Realna oszczędność PIT':'Oszczędność PIT'}: <strong style="color:var(--g)">${zl(r.realTaxSav)}</strong></div>`}
         </summary>
         <div class="sbs-body">
           ${!isRyczalt ? `
@@ -460,8 +466,8 @@ export function renderResults(d){
           <div class="sbs-row"><div class="sbs-lbl">Należny podatek (Po EV)</div><div class="sbs-val" style="color:var(--g)">${zl(r.taxWith)}</div></div>
           <div class="sbs-row sbs-tot" style="margin-top:8px;border-top:1px dashed var(--b2);padding-top:8px"><div class="sbs-lbl">Oszczędność w podatku PIT (Delta nominalna)</div><div class="sbs-val" style="color:var(--g)">${zl(r.taxSav)}</div></div>
           <div class="sbs-row sbs-sub"><div class="sbs-lbl">Oszczędność na składce zdrowotnej (Delta nominalna)</div><div class="sbs-val" style="color:var(--g)">${zl(r.healthSav)}</div></div>
-          <div class="sbs-row sbs-sub"><div class="sbs-lbl">Czynnik dyskontujący (CPI) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Obliczany na koniec roku jako (1 + inflacja)^rok, aby uwzględnić skumulowaną inflację.</span></span></div><div class="sbs-val">÷ ${(r.inflF).toFixed(4).replace('.', ',')}</div></div>
-          <div class="sbs-row"><div class="sbs-lbl">Realna oszczędność łączna (PIT + zdrowotna)</div><div class="sbs-val" style="color:var(--g)">${zl(r.realTaxSav)}</div></div>
+          ${inflationOn ? `<div class="sbs-row sbs-sub"><div class="sbs-lbl">Czynnik dyskontujący (CPI) <span class="tt"><i class="tt-i">ⓘ</i><span class="tt-txt">Obliczany na koniec roku jako (1 + inflacja)^rok, aby uwzględnić skumulowaną inflację.</span></span></div><div class="sbs-val">÷ ${(r.inflF).toFixed(4).replace('.', ',')}</div></div>` : ''}
+          <div class="sbs-row"><div class="sbs-lbl">${inflationOn?'Realna oszczędność łączna (PIT + zdrowotna)':'Oszczędność łączna (PIT + zdrowotna)'}</div><div class="sbs-val" style="color:var(--g)">${zl(r.realTaxSav)}</div></div>
           ${(()=>{
             let ps='<details class="sbs-sub-det"><summary class="sbs-sub-sum">🧮 Podatek PIT — jak wyliczono</summary><div class="sbs-sub-body">';
             if(r.afterBrackets && r.afterBrackets.type==='skala'){
@@ -502,15 +508,15 @@ export function renderResults(d){
               + (r.leasingVATRefundY>0 ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">VAT z rat leasingowych (raty × 23% × 50%)</div><div class="sbs-val" style="color:var(--g)">' + zl(r.leasingVATRefundY) + '</div></div>' : '')
               + (r.opVATRefundY>0 ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">VAT z eksploatacji (brutto − netto) × 50%</div><div class="sbs-val" style="color:var(--g)">' + zl(r.opVATRefundY) + '</div></div>' : '')
               + '<div class="sbs-row sbs-tot" style="border-top:1px dashed var(--bd);padding-top:4px;margin-top:4px"><div class="sbs-lbl">Zwrot VAT w tym roku</div><div class="sbs-val" style="color:var(--g)">' + zl(r.vatRefundY) + '</div></div>'
-              + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Wartość realna (÷ ' + r.inflF.toFixed(4).replace('.',',') + ')</div><div class="sbs-val" style="color:var(--pu)">' + zl(r.vatRefundRealY) + '</div></div>'
+              + (inflationOn ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Wartość realna (÷ ' + r.inflF.toFixed(4).replace('.',',') + ')</div><div class="sbs-val" style="color:var(--pu)">' + zl(r.vatRefundRealY) + '</div></div>' : '')
               + '</div></details>'
             : ''}
           <details class="sbs-sub-det">
             <summary class="sbs-sub-sum">💳 Finansowanie — przepływy i amortyzacja</summary>
             <div class="sbs-sub-body">
               <div class="sbs-row sbs-sub"><div class="sbs-lbl">Przepływ gotówkowy w tym roku</div><div class="sbs-val" style="color:var(--r)">${zl(r.cashOutflowY)}</div></div>
-              <div class="sbs-row sbs-sub"><div class="sbs-lbl">Wartość bieżąca NPV (÷ (1+CPI)^${r.y-1})</div><div class="sbs-val">${zl(r.cashOutflowNPV)}</div></div>
-              <div class="sbs-row sbs-sub" style="font-size:10px;color:var(--t3)"><div class="sbs-lbl" style="width:100%">Przepływy dyskontowane na początek roku; korzyści podatkowe — na koniec roku rozliczeniowego.</div></div>
+              ${inflationOn ? `<div class="sbs-row sbs-sub"><div class="sbs-lbl">Wartość bieżąca NPV (÷ (1+CPI)^${r.y-1})</div><div class="sbs-val">${zl(r.cashOutflowNPV)}</div></div>
+              <div class="sbs-row sbs-sub" style="font-size:10px;color:var(--t3)"><div class="sbs-lbl" style="width:100%">Przepływy dyskontowane na początek roku; korzyści podatkowe — na koniec roku rozliczeniowego.</div></div>` : ''}
               ${(financing!=='leasing'||lType!=='oper')&&r.rawDepY>0
                 ? '<div class="sbs-div" style="padding:3px 0;font-size:10.5px;color:var(--t3)">Amortyzacja:</div>'
                   + '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Odpis roczny (podstawa × stawka)</div><div class="sbs-val">' + zl(r.rawDepY) + '</div></div>'
@@ -538,7 +544,7 @@ export function renderResults(d){
                 : ''}
             </div>
           </details>
-          ${(incFuel||incInv)
+          ${(inflationOn&&(incFuel||incInv))
             ? '<details class="sbs-sub-det"><summary class="sbs-sub-sum">📉 Inflacja, NPV i inwestycja</summary><div class="sbs-sub-body">'
               + (incFuel
                 ? '<div class="sbs-row sbs-sub"><div class="sbs-lbl">Oszczędność na paliwie (nominalna)</div><div class="sbs-val">' + zl(r.fuelSavNominal) + '</div></div>'
@@ -566,9 +572,12 @@ export function renderResults(d){
 
   // A2: the default disclaimer talks about 75% operating-cost deductibility and amortization —
   // both irrelevant for ryczałt (no KUP shield). Swap to a ryczałt-tailored one-liner.
+  // Inflation-CPI toggle: drop the "Realna oszczędność dyskontowana inflacją CPI." lead sentence
+  // when the feature is off (nominal-only view).
+  const inflDisclaimer = inflationOn ? '* Realna oszczędność dyskontowana inflacją CPI. ' : '';
   h+= isRyczalt
-    ? `<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Ryczałt ewidencjonowany nie pomniejsza podatku o koszty samochodu. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`
-    : `<div class="info" style="margin-top:12px;font-size:11px">* Realna oszczędność dyskontowana inflacją CPI. Koszty używania (eksploatacja, paliwo): <strong>75% kosztów</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% kosztów</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
+    ? `<div class="info" style="margin-top:12px;font-size:11px">${inflDisclaimer}Ryczałt ewidencjonowany nie pomniejsza podatku o koszty samochodu. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`
+    : `<div class="info" style="margin-top:12px;font-size:11px">${inflDisclaimer}Koszty używania (eksploatacja, paliwo): <strong>75% kosztów</strong>; amortyzacja, raty leasingu i odsetki kredytu: <strong>100% kosztów</strong>. VAT: 50% odliczalne (art. 86a ust. 1 uVAT). Limit amortyzacji EV: 225 000 zł (art. 23 ust. 1 pkt 4 u.p.d.o.f.). TCO = finansowanie + eksploatacja − korzyści. Kalkulacja ma charakter informacyjny i nie stanowi porady podatkowej.</div>`;
 
   $('res_body').innerHTML=h;
 }
@@ -707,6 +716,10 @@ export function updateVisibility() {
 
   // WP2: re-sync used_dep_rate_row / used_vat_row now that pForm is known (see syncUsedRows()).
   syncUsedRows();
+
+  // Inflation-CPI toggle: the CPI% / return% inputs are revealed only when the feature is on.
+  const inflOn = $('cpi_toggle')?.checked || false;
+  hide($('cpi_inputs'), !inflOn);
 }
 
 // ── INIT ──────────────────────────────────────────

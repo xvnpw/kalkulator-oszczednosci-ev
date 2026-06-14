@@ -49,7 +49,25 @@ The central function, defined in `calc/engine.js` and re-exported from `script.j
 
 Returns year-by-year rows plus cumulative tax savings, NPV-adjusted costs, and health contribution savings. Read the jsdoc-style schema comments in `calc/engine.js` before modifying this function.
 
-- `incCar`, `incFuel`, `incInv` are always `true` from the UI layer; they remain as `calculateEngine` parameters for test flexibility
+- `incCar`, `incFuel` are always `true` from the UI layer; `incInv` is `true` only when the inflation-CPI toggle is on (see below). They remain as `calculateEngine` parameters for test flexibility
+
+### Inflation-CPI toggle (`#cpi_toggle`, default off)
+
+A single checkbox in the "Inflacja & inwestycja alternatywna" card gates the entire inflation/real-terms
++ alternative-investment apparatus. **Default: off** — calculations run in nominal terms.
+
+- Off: `calc()` passes `inflation: 0` and `incInv: false` to the engine (no CPI discounting, no
+  alternative-investment math). The `cpi`/`inv_r` inputs (wrapped in `#cpi_inputs`) are hidden by
+  `updateVisibility()` — hide-don't-remove, so `n('cpi')`/`n('inv_r')` keep resolving with their
+  persisted/default values.
+- On: today's behaviour — CPI discounting throughout plus the alternative-investment block.
+- `renderResults` is presentation-only here: a flag `res.inflationOn` is set in `calc()` and read as
+  `const inflationOn = d.inflationOn !== false` (defaults **true** when absent, so `renderResults`-direct
+  test calls keep their current output). When off, every *"realny/realnie"* label rewords to plain
+  nominal, and the CPI-discount/NPV rows, the redundant cumulative-financing-realnie row, and the
+  alt-investment KPI/block are hidden.
+- **No `calc/*` change** — the toggle only changes which values `calc()` passes to `calculateEngine` and
+  how `renderResults` labels/hides things.
 
 ### Exported functions (used by tests)
 
@@ -86,6 +104,7 @@ Tests run in Vitest with `happy-dom` environment. Test files in `tests/`:
 | `phase4-product-decisions.test.js` | 75% on operating costs only, insurance value-proportion cap, liniowy/ryczałt health deduction |
 | `phase5-robustness.test.js` | Throw-on-unknown-enum / `inflation ≤ −1` / degenerate-financing guards, `creditUnamortized`, constants |
 | `ryczalt-ui-simplification.test.js` | Ryczałt-only UI: `updateVisibility()` hides PIT/health/amortization noise — taxpayer-panel rows **and** car/financing KUP-only items (eksploatacja footnote, `used_dep_rate_row`, `l_kup_lv`, `c_rate`) — and restores them for skala/liniowy; `renderResults()` shows a VAT+fuel-only view |
+| `inflation-toggle.test.js` | Inflation-CPI toggle (`#cpi_toggle`, default off): `calc()` input gating (`inflation`/`incInv` 0/false when off), `updateVisibility()` shows/hides `#cpi_inputs`, `renderResults()` reword/hide of *realny/realnie*, CPI-discount, NPV and alt-investment sites via `res.inflationOn`/`inflationOn`, persistence round-trip through `CONFIG_CHECK_IDS`, and default-off behaviour on a fresh boot |
 
 ## Polish Tax Domain
 
@@ -141,7 +160,7 @@ value uses the same basis as oper-leasing `carValueKUP` (`priceN + 50% VAT` for 
 ## Form Configuration Persistence
 
 - The full form configuration (taxpayer/spouse income & tax settings, car/financing parameters, fuel/economic params, plus `carType`/`financing`) is persisted to `localStorage` under key `ev-config`, versioned via `EV_CONFIG_VERSION`.
-- `CONFIG_VALUE_IDS` / `CONFIG_CHECK_IDS` (near `EV_CONFIG_KEY` in `script.js`) are the single source of truth for which field ids get persisted/restored.
+- `CONFIG_VALUE_IDS` / `CONFIG_CHECK_IDS` (near `EV_CONFIG_KEY` in `script.js`) are the single source of truth for which field ids get persisted/restored. `cpi_toggle` is in `CONFIG_CHECK_IDS`; it defaults to **off** (unchecked) for both fresh loads and old configs that predate the field — `restoreConfig()` only writes checks present in `cfg.checks`, so a missing key leaves the HTML default (off) in place.
 - `saveConfig()` runs automatically at the end of `calc()` — auto-save on every change, no debounce, mirroring the `ev-theme` pattern.
 - `restoreConfig()` runs in `init()` right after `initTheme()`. If `localStorage['ev-config']` is missing, malformed, or has a mismatched `version`, it's a no-op and the HTML's baked-in defaults apply.
 - `resetConfig()` (wired to the `#reset_config` button next to the theme toggle) clears `localStorage['ev-config']` and reloads the page.
